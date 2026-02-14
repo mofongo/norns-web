@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>norns-web API docs</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #d0d0d0;
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    a { color: #8cf; }
+    h1 { color: #fff; margin-bottom: 0.25rem; }
+    h1 span { color: #888; font-weight: normal; }
+    p.back { margin-bottom: 1.5rem; font-size: 0.9rem; }
+    h2 {
+      color: #fff;
+      border-bottom: 1px solid #444;
+      padding-bottom: 0.3rem;
+      margin: 2rem 0 1rem;
+    }
+    h3 { color: #ccc; margin: 1.5rem 0 0.5rem; }
+    h4 { color: #aaa; margin: 1rem 0 0.4rem; }
+    code {
+      font-family: "SF Mono", "Fira Code", monospace;
+      background: #2a2a2a;
+      padding: 0.15rem 0.35rem;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    pre {
+      background: #111;
+      border: 1px solid #333;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    pre code { background: none; padding: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.4rem 0.75rem;
+      border-bottom: 1px solid #333;
+    }
+    th { color: #aaa; font-weight: 600; }
+    td code { font-size: 0.85em; }
+    .sig { color: #8cf; }
+    .desc { color: #aaa; }
+    p { margin: 0.5rem 0; }
+    ul { margin: 0.5rem 0 0.5rem 1.5rem; }
+    li { margin: 0.25rem 0; }
+  </style>
+</head>
+<body>
+  <h1>norns<span>-web</span> API docs</h1>
+  <p class="back"><a href="index.html">back to demo</a></p>
+
+  <!-- ============================================================ -->
+  <h2>Getting Started</h2>
+
+  <p>norns-web provides three ES modules that mirror the <a href="https://monome.org/docs/norns/">monome norns</a> Lua APIs for use in the browser:</p>
+
+  <ul>
+    <li><strong>midi</strong> &mdash; virtual MIDI bus</li>
+    <li><strong>softcut</strong> &mdash; 6-voice sample player/recorder (Web Audio)</li>
+    <li><strong>screen</strong> &mdash; 128&times;64 pixel display (Canvas 2D)</li>
+  </ul>
+
+  <h3>Basic script structure</h3>
+
+  <pre><code>import midi from "./lib/midi.js";
+import softcut from "./lib/softcut.js";
+import screen from "./lib/screen.js";
+
+// Initialize screen (pass a &lt;canvas&gt; element)
+screen.init(document.getElementById("norns-screen"));
+
+// Initialize audio (must be called from a user gesture)
+const ctx = new AudioContext({ sampleRate: 48000 });
+await softcut.init(ctx);
+
+// Your script's redraw loop
+function redraw() {
+  screen.clear();
+  screen.level(15);
+  screen.move(10, 10);
+  screen.text("hello norns-web");
+  screen.update();
+  requestAnimationFrame(redraw);
+}
+redraw();</code></pre>
+
+  <h3>Scripts directory</h3>
+
+  <p>On hardware norns, scripts live in <code>~/dust/code/</code>. In norns-web, place scripts in a <code>scripts/</code> directory and register them in <code>scripts/index.json</code>:</p>
+
+  <pre><code>norns-web/
+├── lib/
+│   ├── midi.js
+│   ├── softcut.js
+│   ├── screen.js
+│   └── script-loader.js
+├── scripts/
+│   ├── index.json         &larr; manifest of available scripts
+│   ├── my-script.js       &larr; your scripts go here
+│   └── another-script.js
+├── index.html
+└── docs.html</code></pre>
+
+  <h4>Manifest format (<code>scripts/index.json</code>)</h4>
+  <pre><code>[
+  {
+    "name": "my-script",
+    "description": "A brief description shown in the launcher",
+    "file": "my-script.js"
+  }
+]</code></pre>
+
+  <p>Scripts listed in the manifest appear in the dropdown on the main page. You can also <strong>drag and drop</strong> any <code>.js</code> file onto the drop zone to run it without adding it to the manifest.</p>
+
+  <p>Each script is an ES module that imports from <code>../lib/</code>. See the <a href="#script-template">script template</a> below.</p>
+
+  <!-- ============================================================ -->
+  <h2 id="midi">midi</h2>
+
+  <p><code>import midi from "./lib/midi.js"</code></p>
+
+  <p>Software-only virtual MIDI bus. Up to 16 ports. Ports can be wired together for internal routing.</p>
+
+  <h3>Module functions</h3>
+
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr>
+      <td><code>midi.connect(n)</code></td>
+      <td>Create or retrieve virtual port <code>n</code> (1&ndash;16). Returns a port object.</td>
+    </tr>
+    <tr>
+      <td><code>midi.cleanup()</code></td>
+      <td>Clear all handlers and destroy all ports.</td>
+    </tr>
+    <tr>
+      <td><code>midi.to_msg(data)</code></td>
+      <td>Parse raw MIDI byte array &rarr; message object <code>{type, note, vel, ch, cc, val}</code>.</td>
+    </tr>
+    <tr>
+      <td><code>midi.to_data(msg)</code></td>
+      <td>Serialize message object &rarr; raw MIDI byte array.</td>
+    </tr>
+  </table>
+
+  <h4>Global callbacks</h4>
+  <table>
+    <tr><th>Property</th><th>Description</th></tr>
+    <tr><td><code>midi.add</code></td><td>Called when a port is created. Receives <code>{id, name}</code>.</td></tr>
+    <tr><td><code>midi.remove</code></td><td>Called when a port is destroyed. Receives <code>{id, name}</code>.</td></tr>
+  </table>
+
+  <h3>Port object</h3>
+
+  <h4>Routing</h4>
+  <table>
+    <tr><th>Method</th><th>Description</th></tr>
+    <tr><td><code>port.wire(target)</code></td><td>Route this port's output to <code>target</code> port's <code>.event</code> callback.</td></tr>
+    <tr><td><code>port.unwire(target)</code></td><td>Remove the routing.</td></tr>
+    <tr><td><code>port.event = fn</code></td><td>Set callback to receive incoming MIDI bytes: <code>fn(data)</code>.</td></tr>
+  </table>
+
+  <h4>Send methods</h4>
+  <p>All channel (<code>ch</code>) params are 1-based (1&ndash;16), defaulting to 1.</p>
+  <table>
+    <tr><th>Method</th><th>Description</th></tr>
+    <tr><td><code>port.send(data)</code></td><td>Send raw byte array.</td></tr>
+    <tr><td><code>port.note_on(note, vel, ch)</code></td><td>Send note on. <code>vel</code> defaults to 127.</td></tr>
+    <tr><td><code>port.note_off(note, vel, ch)</code></td><td>Send note off. <code>vel</code> defaults to 0.</td></tr>
+    <tr><td><code>port.cc(cc, val, ch)</code></td><td>Send control change.</td></tr>
+    <tr><td><code>port.pitchbend(val, ch)</code></td><td>Send pitch bend. <code>val</code>: -8192 to +8191.</td></tr>
+    <tr><td><code>port.channel_pressure(val, ch)</code></td><td>Send channel pressure (aftertouch).</td></tr>
+    <tr><td><code>port.key_pressure(note, val, ch)</code></td><td>Send polyphonic key pressure.</td></tr>
+    <tr><td><code>port.program_change(val, ch)</code></td><td>Send program change.</td></tr>
+    <tr><td><code>port.clock()</code></td><td>Send MIDI clock tick.</td></tr>
+    <tr><td><code>port.start()</code></td><td>Send start.</td></tr>
+    <tr><td><code>port.stop()</code></td><td>Send stop.</td></tr>
+    <tr><td><code>port.continue()</code></td><td>Send continue.</td></tr>
+  </table>
+
+  <h3>Example</h3>
+  <pre><code>const a = midi.connect(1);
+const b = midi.connect(2);
+a.wire(b);
+
+b.event = (data) => {
+  const msg = midi.to_msg(data);
+  console.log(msg); // {type:"note_on", note:60, vel:100, ch:1}
+};
+
+a.note_on(60, 100, 1);</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="softcut">softcut</h2>
+
+  <p><code>import softcut from "./lib/softcut.js"</code></p>
+
+  <p>6-voice sample player/recorder with 2 mono buffers (~350 seconds each at 48 kHz). Backed by an AudioWorklet.</p>
+
+  <h3>Initialization</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr>
+      <td><code>await softcut.init(audioCtx?)</code></td>
+      <td>Initialize the engine. Optionally pass an existing <code>AudioContext</code>. Must be called from a user gesture. Safe to call multiple times.</td>
+    </tr>
+    <tr>
+      <td><code>softcut.reset()</code></td>
+      <td>Reset all voices and clear buffers to defaults.</td>
+    </tr>
+  </table>
+
+  <h3>Voice control</h3>
+  <p>All <code>voice</code> params are 1-based (1&ndash;6).</p>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>softcut.enable(voice, state)</code></td><td>Enable/disable voice (1/0).</td></tr>
+    <tr><td><code>softcut.buffer(voice, buf)</code></td><td>Assign voice to buffer (1 or 2).</td></tr>
+    <tr><td><code>softcut.play(voice, state)</code></td><td>Start/stop playback (1/0).</td></tr>
+    <tr><td><code>softcut.rate(voice, rate)</code></td><td>Playback rate. 1.0 = normal, 0.5 = half speed, -1.0 = reverse.</td></tr>
+    <tr><td><code>softcut.level(voice, amp)</code></td><td>Output level (0.0&ndash;1.0).</td></tr>
+    <tr><td><code>softcut.pan(voice, pos)</code></td><td>Stereo pan (-1.0 left, 0.0 center, 1.0 right).</td></tr>
+    <tr><td><code>softcut.position(voice, pos)</code></td><td>Set playhead position in seconds.</td></tr>
+    <tr><td><code>softcut.loop(voice, state)</code></td><td>Enable/disable looping (1/0).</td></tr>
+    <tr><td><code>softcut.loop_start(voice, pos)</code></td><td>Loop start point in seconds.</td></tr>
+    <tr><td><code>softcut.loop_end(voice, pos)</code></td><td>Loop end point in seconds.</td></tr>
+    <tr><td><code>softcut.fade_time(voice, t)</code></td><td>Crossfade time at loop boundaries in seconds.</td></tr>
+    <tr><td><code>softcut.level_slew_time(voice, t)</code></td><td>Level change slew time in seconds.</td></tr>
+  </table>
+
+  <h3>Recording</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>softcut.rec(voice, state)</code></td><td>Enable/disable recording (1/0).</td></tr>
+    <tr><td><code>softcut.rec_level(voice, amp)</code></td><td>Input recording level (0.0&ndash;1.0).</td></tr>
+    <tr><td><code>softcut.pre_level(voice, amp)</code></td><td>Pre-existing buffer level for overdub (0.0&ndash;1.0). Formula: <code>out = rec_level * input + pre_level * existing</code>.</td></tr>
+  </table>
+
+  <h3>Buffer operations</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>softcut.buffer_clear()</code></td><td>Clear both buffers.</td></tr>
+    <tr><td><code>softcut.buffer_clear_channel(ch)</code></td><td>Clear buffer <code>ch</code> (1 or 2).</td></tr>
+    <tr><td><code>softcut.buffer_clear_region(start, dur)</code></td><td>Clear a time region in both buffers.</td></tr>
+    <tr><td><code>await softcut.buffer_read_mono(file, start_src, start_dst, dur, ch_src, ch_dst)</code></td><td>Load audio file (URL, Blob, or ArrayBuffer) into a buffer. Resamples if needed.</td></tr>
+    <tr><td><code>await softcut.buffer_write_mono(filename, start, dur, ch)</code></td><td>Export buffer region as WAV file download.</td></tr>
+  </table>
+
+  <h3>Phase polling</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>softcut.phase_quant(voice, quantum)</code></td><td>Set phase report interval in seconds.</td></tr>
+    <tr><td><code>softcut.poll_start_phase()</code></td><td>Start phase reporting.</td></tr>
+    <tr><td><code>softcut.poll_stop_phase()</code></td><td>Stop phase reporting.</td></tr>
+    <tr><td><code>softcut.event_phase(fn)</code></td><td>Set phase callback: <code>fn(voice, phase)</code> where phase is in seconds.</td></tr>
+  </table>
+
+  <h3>Example</h3>
+  <pre><code>await softcut.init();
+
+// Play a loop
+softcut.enable(1, 1);
+softcut.buffer(1, 1);
+softcut.level(1, 0.8);
+softcut.rate(1, 1.0);
+softcut.loop(1, 1);
+softcut.loop_start(1, 0);
+softcut.loop_end(1, 2.0);
+softcut.position(1, 0);
+softcut.play(1, 1);
+
+// Record with overdub
+softcut.enable(2, 1);
+softcut.buffer(2, 2);
+softcut.rec(2, 1);
+softcut.rec_level(2, 1.0);
+softcut.pre_level(2, 0.5);  // keep 50% of previous
+softcut.play(2, 1);</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="screen">screen</h2>
+
+  <p><code>import screen from "./lib/screen.js"</code></p>
+
+  <p>128&times;64 pixel display with 16 brightness levels (0&ndash;15), matching the norns OLED. Double-buffered: draw calls accumulate on an offscreen canvas, then <code>screen.update()</code> copies to the visible canvas.</p>
+
+  <h3>Initialization</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>screen.init(canvas)</code></td><td>Bind to a <code>&lt;canvas&gt;</code> element. Sets internal resolution to 128&times;64.</td></tr>
+    <tr><td><code>screen.clear()</code></td><td>Fill offscreen buffer with black. Resets cursor to (0, 0).</td></tr>
+    <tr><td><code>screen.update()</code></td><td>Copy offscreen buffer to visible canvas.</td></tr>
+  </table>
+
+  <h3>Drawing state</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>screen.level(l)</code></td><td>Set brightness 0&ndash;15 (0 = black, 15 = white). Sets both fill and stroke color.</td></tr>
+    <tr><td><code>screen.aa(state)</code></td><td>Anti-aliasing on (1) / off (0).</td></tr>
+    <tr><td><code>screen.line_width(w)</code></td><td>Set stroke line width.</td></tr>
+    <tr><td><code>screen.line_cap(style)</code></td><td>"butt", "round", or "square".</td></tr>
+    <tr><td><code>screen.line_join(style)</code></td><td>"miter", "round", or "bevel".</td></tr>
+  </table>
+
+  <h3>Path operations</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>screen.move(x, y)</code></td><td>Move cursor to absolute position.</td></tr>
+    <tr><td><code>screen.move_rel(x, y)</code></td><td>Move cursor by relative offset.</td></tr>
+    <tr><td><code>screen.line(x, y)</code></td><td>Draw line to absolute position.</td></tr>
+    <tr><td><code>screen.line_rel(x, y)</code></td><td>Draw line by relative offset.</td></tr>
+    <tr><td><code>screen.close()</code></td><td>Close the current path.</td></tr>
+    <tr><td><code>screen.stroke()</code></td><td>Stroke the current path.</td></tr>
+    <tr><td><code>screen.fill()</code></td><td>Fill the current path.</td></tr>
+  </table>
+
+  <h3>Shapes</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>screen.rect(x, y, w, h)</code></td><td>Add rectangle to path (stroke/fill separately).</td></tr>
+    <tr><td><code>screen.rect_fill(x, y, w, h)</code></td><td>Draw filled rectangle immediately.</td></tr>
+    <tr><td><code>screen.circle(x, y, r)</code></td><td>Add circle to path.</td></tr>
+    <tr><td><code>screen.circle_fill(x, y, r)</code></td><td>Draw filled circle immediately.</td></tr>
+    <tr><td><code>screen.arc(x, y, r, a1, a2)</code></td><td>Add arc to path (angles in radians).</td></tr>
+    <tr><td><code>screen.curve(x1, y1, x2, y2, x3, y3)</code></td><td>Cubic bezier from current position through control points to end.</td></tr>
+    <tr><td><code>screen.curve_rel(dx1, dy1, dx2, dy2, dx3, dy3)</code></td><td>Relative cubic bezier.</td></tr>
+    <tr><td><code>screen.pixel(x, y)</code></td><td>Draw a single pixel.</td></tr>
+  </table>
+
+  <h3>Text</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>screen.font_face(index)</code></td><td>Set font by index (1&ndash;24 mapped, others fall back to monospace).</td></tr>
+    <tr><td><code>screen.font_size(size)</code></td><td>Set font size in pixels.</td></tr>
+    <tr><td><code>screen.text(str)</code></td><td>Draw left-aligned text at cursor. Advances cursor.</td></tr>
+    <tr><td><code>screen.text_right(str)</code></td><td>Draw right-aligned text at cursor.</td></tr>
+    <tr><td><code>screen.text_center(str)</code></td><td>Draw centered text at cursor.</td></tr>
+    <tr><td><code>screen.text_extents(str)</code></td><td>Returns <code>{w, h}</code> of the string.</td></tr>
+    <tr><td><code>screen.text_rotate(x, y, str, deg)</code></td><td>Draw rotated text at position (degrees).</td></tr>
+    <tr><td><code>screen.text_center_rotate(x, y, str, deg)</code></td><td>Draw centered rotated text.</td></tr>
+  </table>
+
+  <h3>Transforms &amp; state</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>screen.save()</code></td><td>Save drawing state (level, font, transforms).</td></tr>
+    <tr><td><code>screen.restore()</code></td><td>Restore previously saved state.</td></tr>
+    <tr><td><code>screen.translate(x, y)</code></td><td>Translate coordinate origin.</td></tr>
+    <tr><td><code>screen.rotate(r)</code></td><td>Rotate (radians).</td></tr>
+  </table>
+
+  <h3>Pixel access</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>screen.peek(x, y, w, h)</code></td><td>Read pixel data. Returns <code>ImageData</code>.</td></tr>
+    <tr><td><code>screen.poke(x, y, w, h, imageData)</code></td><td>Write pixel data.</td></tr>
+  </table>
+
+  <h3>Canvas setup</h3>
+  <p>The canvas internal resolution is always 128&times;64. Scale it up with CSS for visibility:</p>
+  <pre><code>&lt;canvas id="norns-screen"&gt;&lt;/canvas&gt;
+
+&lt;style&gt;
+  #norns-screen {
+    width: 512px;    /* 4x scale */
+    height: 256px;
+    image-rendering: pixelated;
+    background: #000;
+  }
+&lt;/style&gt;
+
+&lt;script type="module"&gt;
+  import screen from "./lib/screen.js";
+  screen.init(document.getElementById("norns-screen"));
+&lt;/script&gt;</code></pre>
+
+  <h3>Example</h3>
+  <pre><code>function redraw() {
+  screen.clear();
+
+  // Gradient bar
+  for (let i = 0; i <= 15; i++) {
+    screen.level(i);
+    screen.rect_fill(i * 8, 0, 7, 10);
+  }
+
+  // Circle
+  screen.level(15);
+  screen.circle(64, 32, 12);
+  screen.stroke();
+
+  // Text
+  screen.level(10);
+  screen.font_size(8);
+  screen.move(2, 54);
+  screen.text("norns-web");
+
+  screen.update();
+  requestAnimationFrame(redraw);
+}
+redraw();</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="script-template">Script template</h2>
+
+  <p>Save this as <code>scripts/my-script.js</code>:</p>
+
+  <pre><code>import midi from "../lib/midi.js";
+import softcut from "../lib/softcut.js";
+import screen from "../lib/screen.js";
+
+// -- state --
+let counter = 0;
+
+// -- init --
+export async function init(canvas, audioCtx) {
+  screen.init(canvas);
+  await softcut.init(audioCtx);
+
+  // set up MIDI
+  const port = midi.connect(1);
+  port.event = (data) => {
+    const msg = midi.to_msg(data);
+    console.log("midi:", msg);
+  };
+
+  // set up softcut voices, load buffers, etc.
+  // ...
+
+  // start redraw loop
+  redraw();
+}
+
+// -- redraw (called at ~60fps) --
+function redraw() {
+  screen.clear();
+  screen.level(15);
+  screen.move(10, 10);
+  screen.text("my script");
+  screen.level(8);
+  screen.move(10, 24);
+  screen.text(`frame: ${counter++}`);
+  screen.update();
+  requestAnimationFrame(redraw);
+}
+
+// -- cleanup --
+export function cleanup() {
+  midi.cleanup();
+  softcut.reset();
+}</code></pre>
+
+  <p>Load it from HTML:</p>
+
+  <pre><code>&lt;script type="module"&gt;
+  import { init } from "./scripts/my-script.js";
+
+  document.getElementById("start").addEventListener("click", async () => {
+    const ctx = new AudioContext({ sampleRate: 48000 });
+    await init(document.getElementById("norns-screen"), ctx);
+  });
+&lt;/script&gt;</code></pre>
+
+</body>
+</html>

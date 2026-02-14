@@ -1,0 +1,17 @@
+[
+  {
+    "name": "circles",
+    "description": "Animated overlapping circles with varying brightness",
+    "file": "circles.js"
+  },
+  {
+    "name": "waveform",
+    "description": "Softcut recording with live waveform display",
+    "file": "waveform.js"
+  },
+  {
+    "name": "slicer",
+    "description": "Record from mic, display waveform, play random slices",
+    "file": "slicer.js"
+  }
+]

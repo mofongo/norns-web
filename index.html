@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>norns-web</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: monospace;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      padding: 2rem;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    h1 { margin-bottom: 0.5rem; color: #fff; }
+    h1 span { color: #888; font-weight: normal; }
+    a { color: #8cf; }
+    p.sub { color: #888; margin-bottom: 1.5rem; }
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    button {
+      font-family: monospace;
+      font-size: 0.9rem;
+      padding: 0.5rem 1rem;
+      background: #333;
+      color: #e0e0e0;
+      border: 1px solid #555;
+      cursor: pointer;
+    }
+    button:hover { background: #444; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    fieldset {
+      border: 1px solid #444;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    fieldset:disabled { opacity: 0.4; }
+    legend { color: #aaa; padding: 0 0.25rem; }
+    .rec-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .rec-row label { color: #888; white-space: nowrap; }
+    select, input[type="number"] {
+      font-family: monospace;
+      font-size: 0.85rem;
+      background: #222;
+      color: #e0e0e0;
+      border: 1px solid #555;
+      padding: 0.3rem 0.4rem;
+    }
+    select { min-width: 180px; }
+    input[type="number"] { width: 4rem; }
+    #rec-status { color: #e44; font-size: 0.85rem; }
+    #norns-screen {
+      display: block;
+      width: 512px;
+      height: 256px;
+      background: #000;
+      border: 1px solid #333;
+      margin-bottom: 1rem;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    #script-launcher {
+      margin-bottom: 1rem;
+    }
+    #script-launcher .row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.4rem;
+      flex-wrap: wrap;
+    }
+    #script-launcher label { color: #888; white-space: nowrap; }
+    #script-desc {
+      color: #666;
+      font-size: 0.8rem;
+      margin-left: 0.25rem;
+    }
+    #drop-zone {
+      border: 1px dashed #555;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      color: #666;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+    }
+    #drop-zone.drag-over {
+      border-color: #8cf;
+      color: #8cf;
+      background: rgba(136, 204, 255, 0.05);
+    }
+    #drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    #script-name {
+      color: #8cf;
+      font-size: 0.85rem;
+    }
+    #phase {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 0.5rem;
+      min-height: 1.2em;
+    }
+    #log {
+      background: #111;
+      border: 1px solid #333;
+      padding: 1rem;
+      height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <h1>norns<span>-web</span></h1>
+  <p class="sub">MIDI, Softcut & Screen APIs in the browser — <a href="docs.html">API docs</a></p>
+
+  <canvas id="norns-screen"></canvas>
+
+  <div class="controls">
+    <button id="btn-start">start audio</button>
+    <button id="btn-midi">run MIDI demo</button>
+    <button id="btn-softcut" disabled>run Softcut demo</button>
+    <button id="btn-screen">run screen demo</button>
+    <button id="btn-stop" disabled>stop all</button>
+  </div>
+
+  <fieldset id="script-launcher">
+    <legend>scripts</legend>
+    <div class="row">
+      <label for="script-select">script:</label>
+      <select id="script-select"><option value="">-- select --</option></select>
+      <button id="btn-script-run" disabled>run</button>
+      <button id="btn-script-stop" disabled>stop</button>
+      <span id="script-name"></span>
+    </div>
+    <div class="row">
+      <span id="script-desc"></span>
+    </div>
+    <div id="drop-zone">
+      drop a .js script here or click to browse
+      <input type="file" id="script-file" accept=".js">
+    </div>
+  </fieldset>
+
+  <fieldset id="input-rec" disabled>
+    <legend>audio input recording</legend>
+    <div class="rec-row">
+      <label for="input-select">input:</label>
+      <select id="input-select"><option value="">--</option></select>
+      <button id="btn-connect-input">connect</button>
+    </div>
+    <div class="rec-row">
+      <label for="rec-buffer">buffer:</label>
+      <select id="rec-buffer">
+        <option value="1">1</option>
+        <option value="2">2</option>
+      </select>
+      <label for="rec-dur">loop (s):</label>
+      <input id="rec-dur" type="number" value="4" min="0.5" max="30" step="0.5">
+      <label for="rec-pre">pre:</label>
+      <input id="rec-pre" type="number" value="0" min="0" max="1" step="0.1">
+    </div>
+    <div class="rec-row">
+      <button id="btn-rec-start">record</button>
+      <button id="btn-rec-stop" disabled>stop</button>
+      <button id="btn-rec-play" disabled>play</button>
+      <span id="rec-status"></span>
+    </div>
+  </fieldset>
+
+  <div id="phase"></div>
+  <pre id="log"></pre>
+
+  <script type="module">
+    import { runMidiDemo, runSoftcutDemo, runScreenDemo, stopScreenDemo } from "./examples/demo.js";
+    import softcut from "./lib/softcut.js";
+    import screen from "./lib/screen.js";
+    import loader from "./lib/script-loader.js";
+
+    const $ = (id) => document.getElementById(id);
+    const log = (msg) => {
+      const el = $("log");
+      el.textContent += msg + "\n";
+      el.scrollTop = el.scrollHeight;
+    };
+
+    let audioCtx = null;
+    let inputSource = null; // MediaStreamAudioSourceNode
+    let inputStream = null; // MediaStream
+    const REC_VOICE = 5; // use voice 5 for input recording
+    const PLAY_VOICE = 6; // use voice 6 for playback
+
+    let manifest = [];
+    const canvasEl = $("norns-screen");
+
+    // --- Load script manifest ---
+    try {
+      manifest = await loader.loadManifest();
+      const sel = $("script-select");
+      for (const entry of manifest) {
+        const opt = document.createElement("option");
+        opt.value = entry.file;
+        opt.textContent = entry.name;
+        opt.dataset.desc = entry.description || "";
+        sel.appendChild(opt);
+      }
+      log(`Loaded ${manifest.length} script(s) from manifest`);
+    } catch (err) {
+      log("Could not load script manifest: " + err.message);
+    }
+
+    // --- Script select change ---
+    $("script-select").addEventListener("change", () => {
+      const sel = $("script-select");
+      const opt = sel.selectedOptions[0];
+      $("script-desc").textContent = opt?.dataset.desc || "";
+      $("btn-script-run").disabled = !sel.value;
+    });
+
+    // --- Run script from manifest ---
+    $("btn-script-run").addEventListener("click", async () => {
+      const file = $("script-select").value;
+      if (!file) return;
+      try {
+        stopScreenDemo();
+        const url = `./scripts/${file}`;
+        log(`Loading script: ${file}`);
+        await loader.run(url, canvasEl, audioCtx);
+        $("script-name").textContent = file;
+        $("btn-script-stop").disabled = false;
+        log(`Script "${file}" running`);
+      } catch (err) {
+        log(`Script error: ${err.message}`);
+        console.error(err);
+      }
+    });
+
+    // --- Stop current script ---
+    $("btn-script-stop").addEventListener("click", async () => {
+      await loader.stop();
+      $("script-name").textContent = "";
+      $("btn-script-stop").disabled = true;
+      screen.init(canvasEl);
+      log("Script stopped");
+    });
+
+    // --- Drag and drop ---
+    const dropZone = $("drop-zone");
+
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("drag-over");
+    });
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("drag-over");
+    });
+    dropZone.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("drag-over");
+      const file = e.dataTransfer.files[0];
+      if (file && file.name.endsWith(".js")) {
+        await _loadDroppedFile(file);
+      } else {
+        log("Please drop a .js file");
+      }
+    });
+
+    // --- File input (click to browse) ---
+    $("script-file").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (file) await _loadDroppedFile(file);
+      e.target.value = ""; // reset so same file can be re-selected
+    });
+
+    async function _loadDroppedFile(file) {
+      try {
+        stopScreenDemo();
+        log(`Loading dropped script: ${file.name}`);
+        await loader.runFile(file, canvasEl, audioCtx);
+        $("script-name").textContent = file.name;
+        $("script-select").value = "";
+        $("script-desc").textContent = "";
+        $("btn-script-stop").disabled = false;
+        log(`Script "${file.name}" running`);
+      } catch (err) {
+        log(`Script error: ${err.message}`);
+        console.error(err);
+      }
+    }
+
+    // --- Start audio ---
+    $("btn-start").addEventListener("click", async () => {
+      audioCtx = new AudioContext({ sampleRate: 48000 });
+      await audioCtx.resume();
+      $("btn-start").disabled = true;
+      $("btn-softcut").disabled = false;
+      $("btn-stop").disabled = false;
+      $("input-rec").disabled = false;
+      log("AudioContext started");
+
+      // Enumerate audio input devices
+      try {
+        // Request mic permission first so labels are available
+        const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        tempStream.getTracks().forEach((t) => t.stop());
+
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const inputs = devices.filter((d) => d.kind === "audioinput");
+        const sel = $("input-select");
+        sel.innerHTML = "";
+        inputs.forEach((d, i) => {
+          const opt = document.createElement("option");
+          opt.value = d.deviceId;
+          opt.textContent = d.label || `Input ${i + 1}`;
+          sel.appendChild(opt);
+        });
+        log(`Found ${inputs.length} audio input(s)`);
+      } catch (err) {
+        log("Could not enumerate inputs: " + err.message);
+      }
+    });
+
+    // --- Connect selected input to softcut ---
+    $("btn-connect-input").addEventListener("click", async () => {
+      const deviceId = $("input-select").value;
+      if (!deviceId) return;
+
+      // Tear down previous input
+      if (inputSource) {
+        inputSource.disconnect();
+        inputStream.getTracks().forEach((t) => t.stop());
+      }
+
+      try {
+        await softcut.init(audioCtx);
+
+        inputStream = await navigator.mediaDevices.getUserMedia({
+          audio: { deviceId: { exact: deviceId } },
+        });
+        inputSource = audioCtx.createMediaStreamSource(inputStream);
+        inputSource.connect(softcut.node);
+
+        const label = $("input-select").selectedOptions[0].textContent;
+        log(`Connected input: ${label}`);
+        $("btn-rec-start").disabled = false;
+      } catch (err) {
+        log("Input connection failed: " + err.message);
+      }
+    });
+
+    // --- Record ---
+    $("btn-rec-start").addEventListener("click", async () => {
+      await softcut.init(audioCtx);
+
+      const buf = parseInt($("rec-buffer").value);
+      const dur = parseFloat($("rec-dur").value);
+      const pre = parseFloat($("rec-pre").value);
+
+      // Clear the target buffer region
+      softcut.buffer_clear_region(0, dur);
+
+      // Configure recording voice
+      softcut.enable(REC_VOICE, 1);
+      softcut.buffer(REC_VOICE, buf);
+      softcut.level(REC_VOICE, 0); // silent during recording (monitor off)
+      softcut.rate(REC_VOICE, 1.0);
+      softcut.loop(REC_VOICE, 1);
+      softcut.loop_start(REC_VOICE, 0);
+      softcut.loop_end(REC_VOICE, dur);
+      softcut.fade_time(REC_VOICE, 0.005);
+      softcut.position(REC_VOICE, 0);
+      softcut.rec_level(REC_VOICE, 1.0);
+      softcut.pre_level(REC_VOICE, pre);
+      softcut.rec(REC_VOICE, 1);
+      softcut.play(REC_VOICE, 1);
+
+      // Phase polling for recording position
+      softcut.phase_quant(REC_VOICE, 0.1);
+      softcut.event_phase((voice, phase) => {
+        if (voice === REC_VOICE) {
+          $("rec-status").textContent = `rec ${phase.toFixed(1)}s`;
+        } else if (voice === PLAY_VOICE) {
+          $("phase").textContent = `Playback phase: ${phase.toFixed(3)}s`;
+        }
+      });
+      softcut.poll_start_phase();
+
+      $("btn-rec-start").disabled = true;
+      $("btn-rec-stop").disabled = false;
+      $("rec-status").textContent = "rec 0.0s";
+      log(`Recording to buffer ${buf} (${dur}s loop, pre_level=${pre})`);
+    });
+
+    // --- Stop recording ---
+    $("btn-rec-stop").addEventListener("click", () => {
+      softcut.rec(REC_VOICE, 0);
+      softcut.play(REC_VOICE, 0);
+      softcut.enable(REC_VOICE, 0);
+
+      $("btn-rec-start").disabled = false;
+      $("btn-rec-stop").disabled = true;
+      $("btn-rec-play").disabled = false;
+      $("rec-status").textContent = "stopped";
+      log("Recording stopped");
+    });
+
+    // --- Play back recorded buffer ---
+    $("btn-rec-play").addEventListener("click", () => {
+      const buf = parseInt($("rec-buffer").value);
+      const dur = parseFloat($("rec-dur").value);
+
+      softcut.enable(PLAY_VOICE, 1);
+      softcut.buffer(PLAY_VOICE, buf);
+      softcut.level(PLAY_VOICE, 1.0);
+      softcut.pan(PLAY_VOICE, 0);
+      softcut.rate(PLAY_VOICE, 1.0);
+      softcut.loop(PLAY_VOICE, 1);
+      softcut.loop_start(PLAY_VOICE, 0);
+      softcut.loop_end(PLAY_VOICE, dur);
+      softcut.fade_time(PLAY_VOICE, 0.01);
+      softcut.position(PLAY_VOICE, 0);
+      softcut.play(PLAY_VOICE, 1);
+
+      softcut.phase_quant(PLAY_VOICE, 0.25);
+
+      log(`Playing buffer ${buf} (${dur}s loop)`);
+    });
+
+    // --- Screen demo ---
+    screen.init(canvasEl);
+
+    $("btn-screen").addEventListener("click", async () => {
+      await loader.stop();
+      screen.init(canvasEl);
+      runScreenDemo(screen);
+      $("script-name").textContent = "";
+      $("btn-script-stop").disabled = true;
+      log("Screen demo started");
+    });
+
+    // --- Other demos ---
+    $("btn-midi").addEventListener("click", () => runMidiDemo());
+
+    $("btn-softcut").addEventListener("click", async () => {
+      $("btn-softcut").disabled = true;
+      await runSoftcutDemo(audioCtx);
+    });
+
+    $("btn-stop").addEventListener("click", async () => {
+      stopScreenDemo();
+      await loader.stop();
+      $("script-name").textContent = "";
+      $("btn-script-stop").disabled = true;
+      screen.init(canvasEl);
+
+      // Stop all voices without clearing buffers or tearing down input
+      for (let v = 1; v <= 6; v++) {
+        softcut.rec(v, 0);
+        softcut.play(v, 0);
+        softcut.enable(v, 0);
+      }
+      softcut.poll_stop_phase();
+
+      $("phase").textContent = "";
+      $("rec-status").textContent = "";
+      $("btn-rec-start").disabled = !inputSource;
+      $("btn-rec-stop").disabled = true;
+      // Keep play enabled if we had a recording (buffer data persists)
+      $("btn-softcut").disabled = false;
+      log("Stopped all voices");
+    });
+  </script>
+</body>
+</html>
