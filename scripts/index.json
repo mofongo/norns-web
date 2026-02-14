@@ -13,5 +13,10 @@
     "name": "slicer",
     "description": "Record from mic, display waveform, play random slices",
     "file": "slicer.js"
+  },
+  {
+    "name": "freesound",
+    "description": "Browse, preview, and load sounds from Freesound.org",
+    "file": "freesound.js"
   }
 ]
