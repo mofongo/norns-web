@@ -161,6 +161,17 @@
     </div>
   </fieldset>
 
+  <fieldset id="clock-controls">
+    <legend>clock</legend>
+    <div class="rec-row">
+      <label for="clock-tempo">tempo:</label>
+      <input id="clock-tempo" type="number" value="120" min="1" max="300" step="1">
+      <button id="btn-clock-start">start</button>
+      <button id="btn-clock-stop">stop</button>
+      <span id="clock-beat" style="color:#888;font-size:0.85rem;margin-left:0.5rem;">beat: 0.0</span>
+    </div>
+  </fieldset>
+
   <fieldset id="input-rec" disabled>
     <legend>audio input recording</legend>
     <div class="rec-row">
@@ -194,6 +205,7 @@
     import { runMidiDemo, runSoftcutDemo, runScreenDemo, stopScreenDemo } from "./examples/demo.js";
     import softcut from "./lib/softcut.js";
     import screen from "./lib/screen.js";
+    import clock from "./lib/clock.js";
     import loader from "./lib/script-loader.js";
 
     const $ = (id) => document.getElementById(id);
@@ -488,6 +500,31 @@
       $("btn-softcut").disabled = false;
       log("Stopped all voices");
     });
+
+    // --- Clock controls ---
+    $("clock-tempo").addEventListener("change", () => {
+      const bpm = parseInt($("clock-tempo").value) || 120;
+      clock.internal.set_tempo(bpm);
+      log(`Clock tempo: ${bpm} bpm`);
+    });
+
+    $("btn-clock-start").addEventListener("click", () => {
+      const bpm = parseInt($("clock-tempo").value) || 120;
+      clock.internal.set_tempo(bpm);
+      clock.internal.start();
+      log("Clock started");
+    });
+
+    $("btn-clock-stop").addEventListener("click", () => {
+      clock.internal.stop();
+      log("Clock stopped");
+    });
+
+    // Update beat display
+    setInterval(() => {
+      const beats = clock.get_beats();
+      $("clock-beat").textContent = `beat: ${beats.toFixed(1)}`;
+    }, 100);
   </script>
 </body>
 </html>

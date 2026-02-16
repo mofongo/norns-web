@@ -18,5 +18,10 @@
     "name": "freesound",
     "description": "Browse, preview, and load sounds from Freesound.org",
     "file": "freesound.js"
+  },
+  {
+    "name": "clock-demo",
+    "description": "Step sequencer using clock.run() and clock.sync()",
+    "file": "clock-demo.js"
   }
 ]

@@ -77,6 +77,7 @@
     <li><strong>midi</strong> &mdash; virtual MIDI bus</li>
     <li><strong>softcut</strong> &mdash; 6-voice sample player/recorder (Web Audio)</li>
     <li><strong>screen</strong> &mdash; 128&times;64 pixel display (Canvas 2D)</li>
+    <li><strong>clock</strong> &mdash; coroutine-based clock system for tempo-synced scheduling</li>
   </ul>
 
   <h3>Basic script structure</h3>
@@ -420,6 +421,124 @@ softcut.play(2, 1);</code></pre>
 redraw();</code></pre>
 
   <!-- ============================================================ -->
+  <h2 id="clock">clock</h2>
+
+  <p><code>import clock from "./lib/clock.js"</code></p>
+
+  <p>Coroutine-based clock system matching the norns Lua API. Provides tempo-synced scheduling via <code>clock.run()</code>, <code>clock.sync()</code>, and <code>clock.sleep()</code>. Local-only implementation (no network Link peers).</p>
+
+  <h3>Coroutines</h3>
+
+  <p>The norns <code>clock.run()</code> uses Lua coroutines. In norns-web, we use async functions + AbortController:</p>
+
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr>
+      <td><code>clock.run(fn, ...args)</code></td>
+      <td>Start an async clock function. Returns a numeric coroutine ID. The function can <code>await clock.sync()</code> and <code>await clock.sleep()</code>.</td>
+    </tr>
+    <tr>
+      <td><code>clock.cancel(id)</code></td>
+      <td>Cancel a running coroutine by ID.</td>
+    </tr>
+    <tr>
+      <td><code>await clock.sleep(seconds)</code></td>
+      <td>Sleep for <code>seconds</code>. Must be awaited inside <code>clock.run()</code>. Uses high-accuracy timing (setTimeout + spin loop).</td>
+    </tr>
+    <tr>
+      <td><code>await clock.sync(beat, offset?)</code></td>
+      <td>Sync to the next beat grid position. <code>beat=1</code> syncs to every beat, <code>beat=1/4</code> to every sixteenth note. Optional <code>offset</code> shifts the grid.</td>
+    </tr>
+    <tr>
+      <td><code>clock.cleanup()</code></td>
+      <td>Cancel all running coroutines and clear transport callbacks.</td>
+    </tr>
+  </table>
+
+  <h3>Tempo &amp; beat queries</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>clock.get_tempo()</code></td><td>Returns current BPM.</td></tr>
+    <tr><td><code>clock.get_beats()</code></td><td>Returns current beat position (float).</td></tr>
+    <tr><td><code>clock.get_beat_sec()</code></td><td>Returns duration of one beat in seconds (<code>60 / tempo</code>).</td></tr>
+  </table>
+
+  <h3>Clock source</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>clock.set_source(source)</code></td><td>Set clock source: <code>"internal"</code>, <code>"midi"</code>, or <code>"link"</code>. Link behaves as internal in this implementation.</td></tr>
+    <tr><td><code>clock.get_source()</code></td><td>Returns current source string.</td></tr>
+  </table>
+
+  <h3>Internal clock</h3>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>clock.internal.set_tempo(bpm)</code></td><td>Set tempo (clamped 1&ndash;300, default 120).</td></tr>
+    <tr><td><code>clock.internal.start()</code></td><td>Start the transport.</td></tr>
+    <tr><td><code>clock.internal.stop()</code></td><td>Stop the transport.</td></tr>
+  </table>
+
+  <h3>Link (local-only)</h3>
+  <p>These match the norns Link API signatures but operate locally (no network peers).</p>
+  <table>
+    <tr><th>Function</th><th>Description</th></tr>
+    <tr><td><code>clock.link.set_tempo(bpm)</code></td><td>Set tempo.</td></tr>
+    <tr><td><code>clock.link.set_quantum(q)</code></td><td>Set quantum (default 4).</td></tr>
+    <tr><td><code>clock.link.get_quantum()</code></td><td>Returns quantum.</td></tr>
+    <tr><td><code>clock.link.start()</code></td><td>Start transport.</td></tr>
+    <tr><td><code>clock.link.stop()</code></td><td>Stop transport.</td></tr>
+    <tr><td><code>clock.link.get_number_of_peers()</code></td><td>Always returns 0 (no network).</td></tr>
+    <tr><td><code>clock.link.set_start_stop_sync(enabled)</code></td><td>Stored but no-op without network.</td></tr>
+    <tr><td><code>clock.link.get_start_stop_sync()</code></td><td>Returns current setting.</td></tr>
+  </table>
+
+  <h3>Transport callbacks</h3>
+  <table>
+    <tr><th>Property</th><th>Description</th></tr>
+    <tr><td><code>clock.transport.start</code></td><td>User-settable callback, called when transport starts.</td></tr>
+    <tr><td><code>clock.transport.stop</code></td><td>User-settable callback, called when transport stops.</td></tr>
+    <tr><td><code>clock.tempo_change_handler</code></td><td>User-settable callback <code>fn(tempo)</code>, called when tempo changes.</td></tr>
+  </table>
+
+  <h3>MIDI clock output</h3>
+  <table>
+    <tr><th>Property</th><th>Description</th></tr>
+    <tr><td><code>clock.midi_out_port</code></td><td>Set to a MIDI port object to send 24 PPQ clock ticks + start/stop messages. Set to <code>null</code> to disable.</td></tr>
+  </table>
+
+  <h3>Example</h3>
+  <pre><code>import clock from "../lib/clock.js";
+
+// Set tempo and start transport
+clock.internal.set_tempo(128);
+clock.internal.start();
+
+// Run a coroutine that fires every beat
+const id = clock.run(async () => {
+  while (true) {
+    await clock.sync(1); // every beat
+    console.log("beat!", clock.get_beats());
+  }
+});
+
+// Run another at sixteenth notes
+clock.run(async () => {
+  while (true) {
+    await clock.sync(1/4);
+    // trigger a note, advance a sequencer step, etc.
+  }
+});
+
+// Change tempo later
+clock.internal.set_tempo(140);
+
+// Stop a specific coroutine
+clock.cancel(id);
+
+// Or stop everything
+clock.cleanup();</code></pre>
+
+  <!-- ============================================================ -->
   <h2 id="script-template">Script template</h2>
 
   <p>Save this as <code>scripts/my-script.js</code>:</p>
@@ -427,6 +546,7 @@ redraw();</code></pre>
   <pre><code>import midi from "../lib/midi.js";
 import softcut from "../lib/softcut.js";
 import screen from "../lib/screen.js";
+import clock from "../lib/clock.js";
 
 // -- state --
 let counter = 0;
@@ -442,6 +562,16 @@ export async function init(canvas, audioCtx) {
     const msg = midi.to_msg(data);
     console.log("midi:", msg);
   };
+
+  // set up clock
+  clock.internal.set_tempo(120);
+  clock.internal.start();
+  clock.run(async () => {
+    while (true) {
+      await clock.sync(1);
+      // do something every beat
+    }
+  });
 
   // set up softcut voices, load buffers, etc.
   // ...
@@ -466,6 +596,7 @@ function redraw() {
 // -- cleanup --
 export function cleanup() {
   midi.cleanup();
+  clock.cleanup();
   softcut.reset();
 }</code></pre>
 
