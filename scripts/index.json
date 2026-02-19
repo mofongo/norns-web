@@ -23,5 +23,10 @@
     "name": "clock-demo",
     "description": "Step sequencer using clock.run() and clock.sync()",
     "file": "clock-demo.js"
+  },
+  {
+    "name": "amen",
+    "description": "Sampler & mangler — load, loop, and mangle breakbeats",
+    "file": "amen.js"
   }
 ]
