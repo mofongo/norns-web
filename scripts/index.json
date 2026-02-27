@@ -28,5 +28,10 @@
     "name": "amen",
     "description": "Sampler & mangler — load, loop, and mangle breakbeats",
     "file": "amen.js"
+  },
+  {
+    "name": "washi",
+    "description": "Serge-inspired step sequencer — two 8-step × 4-row haleseqs with modular patch routing",
+    "file": "washi.js"
   }
 ]
