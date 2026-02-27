@@ -45,14 +45,22 @@ const PAGES       = ["seq", "clock", "patch"];
 // acum % d fires at 64/d events per bar
 const CLK_DIVS    = [1, 2, 4, 8, 16, 32, 64];
 
-// Screen layout
-const SCREEN_W  = 128;
-const SCREEN_H  = 64;
-const HDR_H     = 8;    // header height
-const ROW_H     = 12;   // height of each sequencer row
-const LABEL_W   = 8;    // width of row label column
-const STEP_W    = 15;   // width of each step cell  (8 × 15 + 8 = 128 ✓)
-const STATUS_Y  = 56;   // footer y position
+// MIDI note names for CV display
+const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+function cvToNoteName(cv) {
+  const midi   = Math.round(36 + (cv / V_MAX) * 48);
+  const clamped = Math.max(0, Math.min(127, midi));
+  return NOTE_NAMES[clamped % 12] + Math.floor(clamped / 12 - 1);
+}
+
+// Screen layout — 256 × 128
+const SCREEN_W  = 256;
+const SCREEN_H  = 128;
+const HDR_H     = 14;   // header height
+const ROW_H     = 26;   // height of each sequencer row  (4 × 26 = 104)
+const LABEL_W   = 14;   // width of row label column
+const STEP_W    = 30;   // width of each step cell  (8 × 30 + 14 = 254 ≤ 256 ✓)
+const STATUS_Y  = 118;  // footer y position  (14 + 104 + 10 = 128 ✓)
 
 // ─────────────────────────────────────────────────────────────────
 // SIGNAL ROUTING ENGINE
@@ -465,34 +473,44 @@ function drawSeqPage() {
 
   // ── Header ──────────────────────────────────────────────────────
   screen.level(15);
-  screen.font_size(7);
-  screen.move(2, 1);
+  screen.font_size(10);
+  screen.move(3, 2);
   screen.text("washi");
 
   screen.level(6);
-  screen.move(38, 1);
+  screen.font_size(8);
+  screen.move(58, 3);
   screen.text(`hs${activeHs + 1}`);
 
   screen.level(8);
-  screen.move(55, 1);
-  screen.text(`${Math.round(clock.get_tempo())}bpm`);
+  screen.move(82, 3);
+  screen.text(`${Math.round(clock.get_tempo())} bpm`);
+
+  // Step numbers along the top (above row A)
+  for (let s = 1; s <= NB_STEPS; s++) {
+    const x = LABEL_W + (s - 1) * STEP_W + STEP_W / 2 - 3;
+    screen.level(s === hs.step ? 12 : 3);
+    screen.font_size(7);
+    screen.move(x, 2);
+    screen.text(`${s}`);
+  }
 
   // Running indicator (blinking dot)
   if (clockRunning) {
     const blink = Math.floor(frame / 3) % 2 === 0;
     screen.level(blink ? 15 : 5);
-    screen.circle_fill(SCREEN_W - 4, 3, 2);
+    screen.circle_fill(SCREEN_W - 6, 6, 3);
   }
 
   // ── Sequencer rows ──────────────────────────────────────────────
   for (let r = 0; r < NB_ROWS; r++) {
-    const y          = HDR_H + r * ROW_H;
-    const isEditRow  = (r === cursorRow);
+    const y         = HDR_H + r * ROW_H;
+    const isEditRow = (r === cursorRow);
 
     // Row label
-    screen.level(isEditRow ? 15 : 4);
-    screen.font_size(6);
-    screen.move(1, y + 3);
+    screen.level(isEditRow ? 15 : 5);
+    screen.font_size(9);
+    screen.move(2, y + 8);
     screen.text(ROW_NAMES[r]);
 
     for (let s = 1; s <= NB_STEPS; s++) {
@@ -503,34 +521,34 @@ function drawSeqPage() {
       const isSeq    = (s === hs.step);
       const isCursor = (s === cursorStep && r === cursorRow);
 
-      // Inner area: 1px inset all sides
-      const ix = x + 1;
-      const iy = y + 1;
-      const iw = STEP_W - 2;
-      const ih = ROW_H - 2;
+      // Inner area: 2px inset all sides
+      const ix = x + 2;
+      const iy = y + 2;
+      const iw = STEP_W - 4;
+      const ih = ROW_H - 4;
 
-      // Value bar height (bottom-anchored, 1..ih-1 px)
-      const barH = Math.max(1, Math.round((val / V_MAX) * (ih - 1)));
+      // Value bar height (bottom-anchored)
+      const barH = Math.max(1, Math.round((val / V_MAX) * ih));
       const barY = iy + (ih - barH);
 
       if (mode === "skip") {
         screen.level(1);
         screen.rect_fill(ix, iy, iw, ih);
-        // Small X
         screen.level(3);
         screen.move(ix + 2, iy + 2);
         screen.line(ix + iw - 3, iy + ih - 3);
+        screen.move(ix + iw - 3, iy + 2);
+        screen.line(ix + 2, iy + ih - 3);
         screen.stroke();
       } else if (mode === "tie") {
         screen.level(isSeq ? 10 : 3);
         screen.rect_fill(ix, barY, iw, barH);
-        // Tie line
         screen.level(8);
-        screen.move(ix, iy + ih - 1);
-        screen.line(ix + iw, iy + ih - 1);
+        screen.move(ix, iy + ih);
+        screen.line(ix + iw + 4, iy + ih);  // tie line extends to next cell
         screen.stroke();
       } else {
-        screen.level(isSeq ? 15 : (isEditRow ? 5 : 3));
+        screen.level(isSeq ? 15 : (isEditRow ? 6 : 3));
         screen.rect_fill(ix, barY, iw, barH);
       }
 
@@ -541,75 +559,88 @@ function drawSeqPage() {
         screen.stroke();
       }
 
-      // Edit cursor: dimmer outline
+      // Edit cursor: accent outline (shown on all rows at cursor column)
       if (isCursor) {
-        screen.level(isEditRow ? 10 : 6);
-        screen.rect(x, y, STEP_W, ROW_H);
+        screen.level(isEditRow ? 12 : 7);
+        screen.rect(x + 1, y + 1, STEP_W - 2, ROW_H - 2);
         screen.stroke();
       }
     }
   }
 
   // ── Footer ───────────────────────────────────────────────────────
-  const sel  = hs.steps[cursorStep - 1];
-  const sval = sel.vals[cursorRow];
-  screen.level(5);
-  screen.font_size(6);
-  screen.move(1, STATUS_Y + 1);
-  screen.text(`s${cursorStep}${ROW_NAMES[cursorRow]} v:${Math.round(sval / 10)} ${sel.mode}`);
+  const sel      = hs.steps[cursorStep - 1];
+  const sval     = sel.vals[cursorRow];
+  const noteName = cvToNoteName(sval);
+  screen.level(6);
+  screen.font_size(8);
+  screen.move(2, STATUS_Y + 2);
+  screen.text(`s${cursorStep}/${ROW_NAMES[cursorRow]}  ${noteName}  ${sel.mode}`);
 
   // Page indicator dots
   for (let p = 0; p < PAGES.length; p++) {
-    const dx = SCREEN_W - 14 + p * 5;
+    const dx = SCREEN_W - 18 + p * 7;
     screen.level(p === page ? 12 : 3);
-    screen.circle_fill(dx, STATUS_Y + 4, 1);
+    screen.circle_fill(dx, STATUS_Y + 5, 2);
   }
 }
 
 function drawClockPage() {
   screen.level(15);
-  screen.font_size(8);
-  screen.move(2, 2);
+  screen.font_size(12);
+  screen.move(4, 4);
   screen.text("clock");
 
-  screen.level(8);
-  screen.font_size(7);
-  screen.move(2, 14);
-  screen.text(`tempo: ${Math.round(clock.get_tempo())} bpm`);
+  const curTempo = Math.round(clock.get_tempo());
+  screen.level(12);
+  screen.font_size(26);
+  screen.move(4, 22);
+  screen.text(`${curTempo}`);
 
   screen.level(6);
-  screen.move(2, 24);
-  screen.text(`status: ${clockRunning ? "running" : "stopped"}`);
+  screen.font_size(10);
+  screen.move(80, 32);
+  screen.text("bpm");
 
   const beats = clock.get_beats();
-  screen.move(2, 34);
-  screen.text(`beat: ${beats.toFixed(1)}`);
+  screen.level(clockRunning ? 10 : 4);
+  screen.font_size(9);
+  screen.move(4, 58);
+  screen.text(clockRunning ? "running" : "stopped");
 
-  // Bar-level beat visualizer
+  screen.level(5);
+  screen.move(120, 58);
+  screen.text(`beat ${beats.toFixed(1)}`);
+
+  // Quarter-note beat visualizer
   const quarterBeat = Math.floor(beats) % 4;
   for (let i = 0; i < 4; i++) {
-    const bx = 8 + i * 18;
-    const by = 48;
+    const bx = 4 + i * 62;
+    const by = 74;
     if (i === quarterBeat && clockRunning) {
       screen.level(15);
-      screen.rect_fill(bx, by, 14, 8);
+      screen.rect_fill(bx, by, 56, 30);
     } else {
       screen.level(3);
-      screen.rect(bx, by, 14, 8);
+      screen.rect(bx, by, 56, 30);
       screen.stroke();
     }
+    screen.level(i === quarterBeat && clockRunning ? 0 : 4);
+    screen.font_size(10);
+    screen.move(bx + 21, by + 10);
+    screen.text(`${i + 1}`);
   }
 
-  screen.level(4);
-  screen.font_size(6);
-  screen.move(2, 62);
-  screen.text("spc:play/stop  \u2191\u2193:tempo");
+  screen.level(3);
+  screen.font_size(7);
+  screen.move(4, 116);
+  screen.text("space: play/stop   \u2191\u2193: tempo");
 }
 
 function drawPatchPage() {
   screen.level(15);
-  screen.font_size(8);
-  screen.move(2, 2);
+  screen.font_size(12);
+  screen.move(4, 4);
   screen.text("patch");
 
   screen.level(6);
@@ -627,22 +658,24 @@ function drawPatchPage() {
     }
   }
 
-  let y = 14;
-  for (let i = 0; i < Math.min(lines.length, 6); i++) {
-    screen.move(2, y);
+  screen.level(6);
+  screen.font_size(8);
+  let y = 22;
+  for (let i = 0; i < Math.min(lines.length, 10); i++) {
+    screen.move(4, y);
     screen.text(lines[i]);
-    y += 8;
+    y += 10;
   }
 
   if (lines.length === 0) {
     screen.level(4);
-    screen.move(2, 24);
+    screen.move(4, 32);
     screen.text("no links");
   }
 
   screen.level(4);
-  screen.font_size(6);
-  screen.move(2, 62);
+  screen.font_size(8);
+  screen.move(4, 116);
   screen.text(`${lines.length} link(s)`);
 }
 
