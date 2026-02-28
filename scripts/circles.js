@@ -9,9 +9,9 @@ const circles = [];
 
 for (let i = 0; i < NUM; i++) {
   circles.push({
-    cx: 20 + Math.random() * 88,
-    cy: 10 + Math.random() * 44,
-    r: 5 + Math.random() * 12,
+    cx: 40 + Math.random() * 176,
+    cy: 20 + Math.random() * 88,
+    r: 10 + Math.random() * 24,
     dx: (Math.random() - 0.5) * 0.6,
     dy: (Math.random() - 0.5) * 0.4,
     level: 3 + Math.floor(Math.random() * 12),
@@ -23,8 +23,8 @@ function redraw() {
 
   // Title
   screen.level(4);
-  screen.font_size(6);
-  screen.move(2, 1);
+  screen.font_size(12);
+  screen.move(4, 2);
   screen.text("circles");
 
   // Update and draw circles
@@ -33,8 +33,8 @@ function redraw() {
     c.cy += c.dy;
 
     // Bounce off edges
-    if (c.cx - c.r < 0 || c.cx + c.r > 128) c.dx = -c.dx;
-    if (c.cy - c.r < 0 || c.cy + c.r > 64) c.dy = -c.dy;
+    if (c.cx - c.r < 0 || c.cx + c.r > 256) c.dx = -c.dx;
+    if (c.cy - c.r < 0 || c.cy + c.r > 128) c.dy = -c.dy;
 
     // Pulsing brightness
     const l = Math.round(c.level + Math.sin(frame * 0.03 + c.cx) * 3);
@@ -53,7 +53,7 @@ function redraw() {
     for (let j = i + 1; j < NUM; j++) {
       const a = circles[i], b = circles[j];
       const dist = Math.hypot(a.cx - b.cx, a.cy - b.cy);
-      if (dist < 40) {
+      if (dist < 80) {
         screen.move(a.cx, a.cy);
         screen.line(b.cx, b.cy);
       }

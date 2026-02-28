@@ -86,34 +86,34 @@ function redraw() {
 
   // Header
   screen.level(15);
-  screen.font_size(7);
-  screen.move(2, 1);
+  screen.font_size(14);
+  screen.move(4, 2);
   screen.text("clock-demo");
 
   // Tempo and beat info
   screen.level(8);
-  screen.font_size(6);
-  screen.move(74, 1);
+  screen.font_size(12);
+  screen.move(148, 2);
   screen.text(`${clock.get_tempo()} bpm`);
 
   // Beat counter
   const beats = clock.get_beats();
   screen.level(6);
-  screen.move(2, 10);
+  screen.move(4, 20);
   screen.text(`beat: ${beats.toFixed(1)}`);
 
   // Transport indicator
   const blink = Math.sin(t * 4) > 0;
   screen.level(blink ? 12 : 4);
-  screen.move(80, 10);
+  screen.move(160, 20);
   screen.text("playing");
 
   // Step grid: 16 steps in 2 rows of 8
-  const gridX = 4;
-  const gridY = 22;
-  const cellW = 14;
-  const cellH = 12;
-  const gap = 1;
+  const gridX = 8;
+  const gridY = 44;
+  const cellW = 28;
+  const cellH = 24;
+  const gap = 2;
 
   for (let i = 0; i < STEPS; i++) {
     const row = Math.floor(i / 8);
@@ -143,8 +143,8 @@ function redraw() {
     } else {
       screen.level(pattern[i] ? 12 : 4);
     }
-    screen.font_size(6);
-    screen.move(x + 3, y + 3);
+    screen.font_size(12);
+    screen.move(x + 6, y + 6);
     screen.text(`${i + 1}`);
   }
 
@@ -158,22 +158,22 @@ function redraw() {
   // Beat dots at bottom - show quarter note pulse
   const quarterBeat = Math.floor(beats) % 4;
   for (let i = 0; i < 4; i++) {
-    const x = 30 + i * 20;
-    const y = 56;
+    const x = 60 + i * 40;
+    const y = 112;
     if (i === quarterBeat) {
       screen.level(15);
-      screen.circle_fill(x, y, 3);
+      screen.circle_fill(x, y, 6);
     } else {
       screen.level(4);
-      screen.circle(x, y, 3);
+      screen.circle(x, y, 6);
       screen.stroke();
     }
   }
 
   // Bottom info
   screen.level(4);
-  screen.font_size(6);
-  screen.move(2, 62);
+  screen.font_size(12);
+  screen.move(4, 124);
   screen.text("16th note seq");
 
   screen.update();

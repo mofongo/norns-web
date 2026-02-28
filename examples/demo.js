@@ -169,76 +169,76 @@ export function runScreenDemo(screen) {
 
     // Title text
     screen.level(15);
-    screen.font_size(8);
-    screen.move(2, 2);
+    screen.font_size(16);
+    screen.move(4, 4);
     screen.text("norns-web screen");
 
     // Subtitle
     screen.level(6);
-    screen.font_size(7);
-    screen.move(2, 12);
-    screen.text("128x64  16 levels");
+    screen.font_size(14);
+    screen.move(4, 24);
+    screen.text("256x128  16 levels");
 
     // Brightness gradient bar
     for (let i = 0; i <= 15; i++) {
       screen.level(i);
-      screen.rect_fill(2 + i * 7, 22, 6, 4);
+      screen.rect_fill(4 + i * 14, 44, 12, 8);
     }
 
     // Animated circle
-    const cx = 100;
-    const cy = 44;
-    const r = 8 + Math.sin(t * 2) * 4;
+    const cx = 200;
+    const cy = 88;
+    const r = 16 + Math.sin(t * 2) * 8;
     screen.level(12);
     screen.circle(cx, cy, r);
     screen.stroke();
 
     // Filled circle orbiting
-    const ox = cx + Math.cos(t * 3) * 14;
-    const oy = cy + Math.sin(t * 3) * 14;
+    const ox = cx + Math.cos(t * 3) * 28;
+    const oy = cy + Math.sin(t * 3) * 28;
     screen.level(15);
-    screen.circle_fill(ox, oy, 3);
+    screen.circle_fill(ox, oy, 6);
 
     // Animated rectangle
-    const rw = 20 + Math.sin(t * 1.5) * 8;
+    const rw = 40 + Math.sin(t * 1.5) * 16;
     screen.level(8);
-    screen.rect(4, 30, rw, 10);
+    screen.rect(8, 60, rw, 20);
     screen.stroke();
 
     // Bezier curve
     screen.level(10);
-    screen.move(4, 50);
-    const wave = Math.sin(t * 2) * 10;
-    screen.curve(30, 50 + wave, 60, 50 - wave, 90, 50);
+    screen.move(8, 100);
+    const wave = Math.sin(t * 2) * 20;
+    screen.curve(60, 100 + wave, 120, 100 - wave, 180, 100);
     screen.stroke();
 
     // Pixel scatter
     screen.level(15);
     for (let i = 0; i < 8; i++) {
-      const px = 30 + Math.sin(t * 2 + i * 0.8) * 20;
-      const py = 38 + Math.cos(t * 1.7 + i * 1.1) * 8;
+      const px = 60 + Math.sin(t * 2 + i * 0.8) * 40;
+      const py = 76 + Math.cos(t * 1.7 + i * 1.1) * 16;
       screen.pixel(Math.round(px), Math.round(py));
     }
 
     // Arc
     screen.level(7);
-    screen.move(56, 36);
-    screen.arc(56, 36, 8, t % (2 * Math.PI), (t + 2) % (2 * Math.PI));
+    screen.move(112, 72);
+    screen.arc(112, 72, 16, t % (2 * Math.PI), (t + 2) % (2 * Math.PI));
     screen.stroke();
 
     // Line pattern
     screen.level(4);
     for (let i = 0; i < 5; i++) {
-      const y = 56 + Math.sin(t + i * 0.5) * 3;
-      screen.move(4 + i * 16, y);
-      screen.line(14 + i * 16, 60 - Math.sin(t + i * 0.3) * 3);
+      const y = 112 + Math.sin(t + i * 0.5) * 6;
+      screen.move(8 + i * 32, y);
+      screen.line(28 + i * 32, 120 - Math.sin(t + i * 0.3) * 6);
     }
     screen.stroke();
 
     // Right-aligned text
     screen.level(10);
-    screen.font_size(7);
-    screen.move(126, 56);
+    screen.font_size(14);
+    screen.move(252, 112);
     screen.text_right(`f:${frame}`);
 
     screen.update();

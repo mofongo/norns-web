@@ -24,7 +24,7 @@ const VOICE = 1;
 const REC_VOICES = [2, 3]; // stereo recording voices
 const BUF = 1;
 const REC_BUF = 2;
-const DISPLAY_W = 128;
+const DISPLAY_W = 256;
 
 // -- effect options (matching original) --
 const EFFECT_OPTIONS = [
@@ -915,23 +915,23 @@ function onKeyUp(e) {
 // -- drawing --
 function boxText(x, y, s, invert) {
   const ext = screen.text_extents(s);
-  const w = ext.w + 7;
+  const w = ext.w + 14;
 
   if (invert) {
     screen.level(15);
   } else {
     screen.level(0);
   }
-  screen.rect_fill(x - w / 2, y, w, 10);
+  screen.rect_fill(x - w / 2, y, w, 20);
 
   if (invert) {
     screen.level(0);
   } else {
     screen.level(5);
   }
-  screen.rect(x - w / 2, y, w, 10);
+  screen.rect(x - w / 2, y, w, 20);
   screen.stroke();
-  screen.move(x, y + 6);
+  screen.move(x, y + 12);
   screen.text_center(s);
 
   if (invert) screen.level(15);
@@ -939,28 +939,28 @@ function boxText(x, y, s, invert) {
 }
 
 function metroIcon(x, y) {
-  screen.move(x + 2, y + 5);
-  screen.line(x + 7, y);
-  screen.line(x + 12, y + 5);
-  screen.line(x + 3, y + 5);
+  screen.move(x + 4, y + 10);
+  screen.line(x + 14, y);
+  screen.line(x + 24, y + 10);
+  screen.line(x + 6, y + 10);
   screen.stroke();
-  screen.move(x + 7, y + 3);
-  screen.line(metroTick ? (x + 4) : (x + 10), y);
+  screen.move(x + 14, y + 6);
+  screen.line(metroTick ? (x + 8) : (x + 20), y);
   screen.stroke();
 }
 
 function redraw() {
   screen.clear();
   screen.level(15);
-  screen.font_size(6);
+  screen.font_size(12);
 
   // Metronome icon
-  metroIcon(-2, 3);
+  metroIcon(-4, 6);
 
   // Mode-specific header
   if (mode === "breaker") {
     // Beat counter
-    screen.move(12, 8);
+    screen.move(24, 16);
     screen.text(`${Math.floor(currentBeat + 1)}/${beatNum}`);
 
     // Effect buttons
@@ -968,31 +968,31 @@ function redraw() {
       const name = EFFECT_OPTIONS[effectSel][i];
       if (name && name !== "") {
         const isActive = activeEffects[name];
-        const bx = 55 + 45 * i;
-        const { x: bxx, w: bw } = boxText(bx, 1, name, isActive);
+        const bx = 110 + 90 * i;
+        const { x: bxx, w: bw } = boxText(bx, 2, name, isActive);
 
         // Probability bar
         const prob = effectProbs[name] || 0;
         if (prob > 0) {
           screen.level(5);
-          screen.move(bxx, 12);
-          screen.line(bxx + bw * prob / 100, 12);
+          screen.move(bxx, 24);
+          screen.line(bxx + bw * prob / 100, 24);
           screen.stroke();
         }
       }
     }
   } else {
     // Maker mode header
-    screen.move(12, 8);
+    screen.move(24, 16);
     screen.text(`${Math.floor(clock.get_tempo())}/${makerBeatNum} beats`);
 
-    boxText(80, 1, "rec", recording);
-    boxText(105, 1, "play", makerPlaying);
+    boxText(160, 2, "rec", recording);
+    boxText(210, 2, "play", makerPlaying);
   }
 
   // Waveform area
-  const waveH = 40;
-  const waveMid = 38;
+  const waveH = 80;
+  const waveMid = 76;
 
   if (waveformReady) {
     // Compute loop pixel boundaries
@@ -1030,8 +1030,8 @@ function redraw() {
       if (Math.abs(posPixel - i) < 2) {
         if (i === posPixel || Math.abs(posPixel - i) < 1) {
           screen.level(5);
-          screen.move(i, 14);
-          screen.line(i, 59);
+          screen.move(i, 28);
+          screen.line(i, 118);
           screen.stroke();
         }
         screen.level(15);
@@ -1047,24 +1047,24 @@ function redraw() {
     // Loop boundary markers (maker mode)
     if (mode === "maker") {
       screen.level(15);
-      screen.move(lp1, 12);
-      screen.line(lp1, 60);
+      screen.move(lp1, 24);
+      screen.line(lp1, 120);
       screen.stroke();
-      screen.move(lp2, 12);
-      screen.line(lp2, 60);
+      screen.move(lp2, 24);
+      screen.line(lp2, 120);
       screen.stroke();
     }
   } else {
     // No waveform - show instructions
     screen.level(5);
-    screen.move(64, 35);
+    screen.move(128, 70);
     screen.text_center(sampleLoaded ? "loading..." : "press L to load sample");
   }
 
   // Bottom help text
   screen.level(3);
-  screen.font_size(6);
-  screen.move(1, 62);
+  screen.font_size(12);
+  screen.move(2, 124);
   if (mode === "breaker") {
     screen.text("1-8:fx q/w:trig spc:play l:load tab:rec");
   } else {
@@ -1073,13 +1073,13 @@ function redraw() {
 
   // Message overlay
   if (showMessage) {
-    const w = showMessage.length * 5 + 10;
+    const w = showMessage.length * 10 + 20;
     screen.level(0);
-    screen.rect_fill(64 - w / 2, 26, w, 12);
+    screen.rect_fill(128 - w / 2, 52, w, 24);
     screen.level(15);
-    screen.rect(64 - w / 2, 26, w, 12);
+    screen.rect(128 - w / 2, 52, w, 24);
     screen.stroke();
-    screen.move(64, 34);
+    screen.move(128, 68);
     screen.text_center(showMessage);
   }
 

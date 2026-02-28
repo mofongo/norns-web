@@ -13,7 +13,7 @@ const DUR = 4; // seconds
 const SR = 48000;
 
 // Waveform display buffer (downsampled for screen width)
-const DISPLAY_WIDTH = 124;
+const DISPLAY_WIDTH = 248;
 const waveform = new Float32Array(DISPLAY_WIDTH);
 let waveformReady = false;
 
@@ -22,35 +22,35 @@ function redraw() {
 
   // Header
   screen.level(15);
-  screen.font_size(7);
-  screen.move(2, 1);
+  screen.font_size(14);
+  screen.move(4, 2);
   screen.text("waveform");
 
   screen.level(6);
-  screen.font_size(6);
-  screen.move(56, 1);
+  screen.font_size(12);
+  screen.move(112, 2);
   screen.text(recording ? "rec" : "play");
 
   // Phase position
   screen.level(4);
-  screen.move(86, 1);
+  screen.move(172, 2);
   screen.text(`${phase.toFixed(1)}s`);
 
-  // Waveform display area: y 12..56 (height 44), x 2..126
-  const yMid = 34;
-  const yRange = 20;
+  // Waveform display area: y 24..112 (height 88), x 4..252
+  const yMid = 68;
+  const yRange = 40;
 
   // Center line
   screen.level(2);
-  screen.move(2, yMid);
-  screen.line(126, yMid);
+  screen.move(4, yMid);
+  screen.line(252, yMid);
   screen.stroke();
 
   // Draw waveform
   if (waveformReady) {
     screen.level(10);
     for (let i = 0; i < DISPLAY_WIDTH; i++) {
-      const x = 2 + i;
+      const x = 4 + i;
       const amp = waveform[i];
       const h = Math.abs(amp) * yRange;
       if (h > 0.5) {
@@ -63,17 +63,17 @@ function redraw() {
 
   // Playhead position indicator
   if (phase >= 0) {
-    const px = 2 + Math.floor((phase / DUR) * DISPLAY_WIDTH);
+    const px = 4 + Math.floor((phase / DUR) * DISPLAY_WIDTH);
     screen.level(15);
-    screen.move(px, 12);
-    screen.line(px, 56);
+    screen.move(px, 24);
+    screen.line(px, 112);
     screen.stroke();
   }
 
   // Bottom bar
   screen.level(5);
-  screen.move(2, 58);
-  screen.font_size(6);
+  screen.move(4, 116);
+  screen.font_size(12);
   screen.text(`${DUR}s loop  buf:${BUF}`);
 
   screen.update();

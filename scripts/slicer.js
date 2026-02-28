@@ -16,7 +16,7 @@ const REC_DUR = 6; // seconds to record
 const MIN_SLICE = 0.15; // minimum slice length
 const MAX_SLICE = 1.2; // maximum slice length
 const RETRIGGER_MS = 300; // ms between new random slices
-const DISPLAY_WIDTH = 124;
+const DISPLAY_WIDTH = 248;
 
 // -- state --
 let animId = null;
@@ -138,57 +138,57 @@ function redraw() {
 
   // Header
   screen.level(15);
-  screen.font_size(7);
-  screen.move(2, 1);
+  screen.font_size(14);
+  screen.move(4, 2);
   screen.text("slicer");
 
   // State indicator
   if (state === "recording") {
     const blink = Math.sin(t * 6) > 0;
     screen.level(blink ? 15 : 4);
-    screen.font_size(6);
-    screen.move(46, 2);
+    screen.font_size(12);
+    screen.move(92, 2);
     screen.text(`rec ${recPhase.toFixed(1)}s / ${REC_DUR}s`);
 
     // Recording progress bar
     screen.level(4);
-    screen.rect(2, 10, DISPLAY_WIDTH, 3);
+    screen.rect(4, 20, DISPLAY_WIDTH, 6);
     screen.stroke();
     screen.level(12);
     const prog = Math.min(1, recPhase / REC_DUR);
-    screen.rect_fill(2, 10, Math.floor(prog * DISPLAY_WIDTH), 3);
+    screen.rect_fill(4, 20, Math.floor(prog * DISPLAY_WIDTH), 6);
   } else if (state === "playing") {
     screen.level(8);
-    screen.font_size(6);
-    screen.move(46, 2);
+    screen.font_size(12);
+    screen.move(92, 2);
     screen.text("playing");
   } else if (state === "error") {
     screen.level(12);
-    screen.font_size(6);
-    screen.move(2, 2);
+    screen.font_size(12);
+    screen.move(4, 2);
     screen.text(statusMsg);
   } else {
     screen.level(5);
-    screen.font_size(6);
-    screen.move(46, 2);
+    screen.font_size(12);
+    screen.move(92, 2);
     screen.text(statusMsg || "starting...");
   }
 
-  // Waveform area: y 16..54
-  const yMid = 35;
-  const yRange = 17;
+  // Waveform area: y 32..108
+  const yMid = 70;
+  const yRange = 34;
 
   // Center line
   screen.level(2);
-  screen.move(2, yMid);
-  screen.line(126, yMid);
+  screen.move(4, yMid);
+  screen.line(252, yMid);
   screen.stroke();
 
   // Draw waveform
   if (waveformReady) {
     screen.level(6);
     for (let i = 0; i < DISPLAY_WIDTH; i++) {
-      const x = 2 + i;
+      const x = 4 + i;
       const amp = waveform[i];
       const h = amp * yRange;
       if (h > 0.5) {
@@ -203,8 +203,8 @@ function redraw() {
       for (let i = 0; i < slices.length; i++) {
         const s = slices[i];
         if (!s.active) continue;
-        const x1 = 2 + Math.floor((s.start / REC_DUR) * DISPLAY_WIDTH);
-        const x2 = 2 + Math.floor((s.end / REC_DUR) * DISPLAY_WIDTH);
+        const x1 = 4 + Math.floor((s.start / REC_DUR) * DISPLAY_WIDTH);
+        const x2 = 4 + Math.floor((s.end / REC_DUR) * DISPLAY_WIDTH);
 
         // Slice highlight
         screen.level(3);
@@ -212,8 +212,8 @@ function redraw() {
 
         // Brighter waveform in slice region
         screen.level(13);
-        for (let j = x1; j < x2 && j < 126; j++) {
-          const wi = j - 2;
+        for (let j = x1; j < x2 && j < 252; j++) {
+          const wi = j - 4;
           if (wi >= 0 && wi < DISPLAY_WIDTH) {
             const amp = waveform[wi];
             const h = amp * yRange;
@@ -226,7 +226,7 @@ function redraw() {
         screen.stroke();
 
         // Playhead
-        const px = 2 + Math.floor((s.phase / REC_DUR) * DISPLAY_WIDTH);
+        const px = 4 + Math.floor((s.phase / REC_DUR) * DISPLAY_WIDTH);
         screen.level(15);
         screen.move(px, yMid - yRange);
         screen.line(px, yMid + yRange);
@@ -237,7 +237,7 @@ function redraw() {
 
   // Recording playhead
   if (state === "recording") {
-    const px = 2 + Math.floor((recPhase / REC_DUR) * DISPLAY_WIDTH);
+    const px = 4 + Math.floor((recPhase / REC_DUR) * DISPLAY_WIDTH);
     screen.level(15);
     screen.move(px, yMid - yRange);
     screen.line(px, yMid + yRange);
@@ -246,8 +246,8 @@ function redraw() {
 
   // Bottom info
   screen.level(4);
-  screen.font_size(6);
-  screen.move(2, 58);
+  screen.font_size(12);
+  screen.move(4, 116);
   if (state === "playing") {
     screen.text(`${PLAY_VOICES.length} voices  ${MIN_SLICE}-${MAX_SLICE}s slices`);
   } else {

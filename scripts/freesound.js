@@ -86,36 +86,36 @@ function redraw() {
   screen.clear();
 
   screen.level(15);
-  screen.font_size(7);
-  screen.move(2, 1);
+  screen.font_size(14);
+  screen.move(4, 2);
   screen.text("freesound");
 
   if (loadedSound) {
     // Show loaded sound info
     screen.level(10);
-    screen.font_size(6);
-    screen.move(2, 12);
+    screen.font_size(12);
+    screen.move(4, 22);
     const name = loadedSound.name.length > 22
       ? loadedSound.name.slice(0, 21) + "~"
       : loadedSound.name;
     screen.text(name);
 
     screen.level(6);
-    screen.move(2, 20);
+    screen.move(4, 40);
     screen.text(`${formatDuration(loadedSound.duration)}  buf:${BUF}`);
 
     // Waveform placeholder
-    const yMid = 38;
-    const yRange = 12;
+    const yMid = 76;
+    const yRange = 24;
     screen.level(2);
-    screen.move(2, yMid);
-    screen.line(126, yMid);
+    screen.move(4, yMid);
+    screen.line(252, yMid);
     screen.stroke();
 
     if (loadedSound.waveform) {
       screen.level(8);
       for (let i = 0; i < loadedSound.waveform.length; i++) {
-        const x = 2 + i;
+        const x = 4 + i;
         const h = loadedSound.waveform[i] * yRange;
         if (h > 0.5) {
           screen.move(x, yMid - h);
@@ -126,7 +126,7 @@ function redraw() {
 
       // Playhead
       if (playing && loadedSound.duration > 0) {
-        const px = 2 + Math.floor((playPhase / loadedSound.duration) * 124);
+        const px = 4 + Math.floor((playPhase / loadedSound.duration) * 248);
         screen.level(15);
         screen.move(px, yMid - yRange);
         screen.line(px, yMid + yRange);
@@ -136,21 +136,21 @@ function redraw() {
 
     // Status
     screen.level(playing ? 15 : 5);
-    screen.font_size(6);
-    screen.move(2, 54);
+    screen.font_size(12);
+    screen.move(4, 108);
     screen.text(playing ? "playing" : "stopped");
 
     screen.level(4);
-    screen.move(50, 54);
+    screen.move(100, 108);
     screen.text("open browser to search");
   } else {
     screen.level(5);
-    screen.font_size(6);
-    screen.move(2, 20);
+    screen.font_size(12);
+    screen.move(4, 40);
     screen.text("open the browser panel");
-    screen.move(2, 28);
+    screen.move(4, 56);
     screen.text("to search & load sounds");
-    screen.move(2, 40);
+    screen.move(4, 80);
     screen.level(3);
     screen.text("sounds from freesound.org");
   }
