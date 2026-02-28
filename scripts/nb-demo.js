@@ -1,19 +1,19 @@
 // nb-demo — plug-and-play voice selector with MIDI keyboard
 //
-// Demonstrates the nb (note-broker) library:
-//   - nb.init() auto-discovers Web MIDI outputs as players
-//   - nb.add_param() creates a voice selector
-//   - selector.select(name) / get_player() drives note output
+// Demonstrates the nb (note-broker) library with oilcan percussion voices.
+// Oilcan is a 2-op FM percussion synth with 7 timbres per kit, ported from
+// zjb-s/oilcan. Each kit timbre is a different drum sound (kick, snare, hat…).
 //
 // Controls:
 //   ↑ / ↓       navigate player list
 //   Enter       select highlighted player
-//   A S D F G H J K  → C D E F G A B C  (white keys, octave 4-5)
-//   W E T Y U        → C# D# F# G# A#  (black keys)
-//   [ / ]       octave down / up
+//   A S D F G H J K  → timbres 1–7 + 8 (notes map to timbre via (note-1)%7)
+//   W E T Y U        → black key equivalents
+//   [ / ]       octave down / up (shifts which timbres you hit)
 
 import screen from "../lib/screen.js";
 import nb from "../lib/nb.js";
+import { initOilcan } from "../lib/oilcan.js";
 
 // -- state --
 let animId = null;
@@ -241,7 +241,7 @@ function onKeyUp(e) {
 }
 
 // -- init / cleanup --
-export async function init(canvas, _audioCtx) {
+export async function init(canvas, audioCtx) {
   screen.init(canvas);
   frame = 0;
   cursorIdx = 0;
@@ -252,17 +252,28 @@ export async function init(canvas, _audioCtx) {
   // Initialize nb: discovers Web MIDI outputs
   await nb.init();
 
+  // Initialize oilcan percussion voices (requires AudioContext)
+  if (audioCtx) {
+    try {
+      await initOilcan(audioCtx);
+    } catch (err) {
+      console.warn("oilcan init failed:", err);
+    }
+  }
+
   // Create a voice selector
   voice = nb.add_param("nb_demo_voice", "voice");
 
-  // Refresh player list (nb.init() may have added new hardware players)
+  // Refresh player list (nb.init() + initOilcan() may have added new players)
   playerNames = voice.getNames();
 
-  // Auto-select the first real player if one exists
-  if (playerNames.length > 1) {
-    cursorIdx = 1;
-    selectedIdx = 1;
-    voice.select(playerNames[1]);
+  // Auto-select Oilcan 1 if available, otherwise first real player
+  const oilcanIdx = playerNames.indexOf("Oilcan 1");
+  const startIdx = oilcanIdx >= 0 ? oilcanIdx : (playerNames.length > 1 ? 1 : 0);
+  if (startIdx > 0) {
+    cursorIdx = startIdx;
+    selectedIdx = startIdx;
+    voice.select(playerNames[startIdx]);
   }
 
   window.addEventListener("keydown", onKeyDown);
