@@ -33,5 +33,10 @@
     "name": "washi",
     "description": "Serge-inspired step sequencer — two 8-step × 4-row haleseqs with modular patch routing",
     "file": "washi.js"
+  },
+  {
+    "name": "nb-demo",
+    "description": "Plug-and-play voice selector — pick a MIDI output and play notes with the keyboard",
+    "file": "nb-demo.js"
   }
 ]
