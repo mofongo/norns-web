@@ -154,8 +154,8 @@
       <span id="script-desc"></span>
     </div>
     <div id="drop-zone">
-      drop a .js script here or click to browse
-      <input type="file" id="script-file" accept=".js">
+      drop a .js or .lua script here or click to browse
+      <input type="file" id="script-file" accept=".js,.lua">
     </div>
   </fieldset>
 
@@ -199,6 +199,8 @@
   <div id="phase"></div>
   <pre id="log"></pre>
 
+  <!-- fengari Lua 5.3 VM — must load before the module script -->
+  <script src="./node_modules/fengari-web/dist/fengari-web.js"></script>
   <script type="module">
     import { runMidiDemo, runSoftcutDemo, runScreenDemo, stopScreenDemo } from "./examples/demo.js";
     import softcut from "./lib/softcut.js";
@@ -287,10 +289,10 @@
       e.preventDefault();
       dropZone.classList.remove("drag-over");
       const file = e.dataTransfer.files[0];
-      if (file && file.name.endsWith(".js")) {
+      if (file && (file.name.endsWith(".js") || file.name.endsWith(".lua"))) {
         await _loadDroppedFile(file);
       } else {
-        log("Please drop a .js file");
+        log("Please drop a .js or .lua file");
       }
     });
 

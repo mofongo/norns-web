@@ -43,5 +43,20 @@
     "name": "supersonic-demo",
     "description": "scsynth (SuperCollider audio server) running as WebAssembly — 15 Sonic Pi synths playable in the browser",
     "file": "supersonic-demo.js"
+  },
+  {
+    "name": "hello (lua)",
+    "description": "Minimal Lua script — clock.run / clock.sync coroutine demo",
+    "file": "hello.lua"
+  },
+  {
+    "name": "softcut-demo (lua)",
+    "description": "Lua softcut demo — load sample, loop, modulate rate",
+    "file": "softcut-demo.lua"
+  },
+  {
+    "name": "api-test (lua)",
+    "description": "Tests screen, softcut, clock, and midi APIs together",
+    "file": "api-test.lua"
   }
 ]
