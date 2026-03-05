@@ -33,5 +33,10 @@
     "name": "hello (lua)",
     "description": "Minimal Lua script — clock.run / clock.sync coroutine demo",
     "file": "hello.lua"
+  },
+  {
+    "name": "softcut-demo (lua)",
+    "description": "Lua softcut demo — load sample, loop, modulate rate",
+    "file": "softcut-demo.lua"
   }
 ]
