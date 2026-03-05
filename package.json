@@ -1,0 +1,28 @@
+{
+  "name": "norns-web",
+  "version": "1.0.0",
+  "description": "Experimental port of Norns to use web apis.",
+  "main": "index.js",
+  "directories": {
+    "example": "examples",
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mofongo/norns-web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mofongo/norns-web/issues"
+  },
+  "homepage": "https://github.com/mofongo/norns-web#readme",
+  "dependencies": {
+    "lua-in-js": "^2.2.5"
+  }
+}
