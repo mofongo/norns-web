@@ -38,5 +38,10 @@
     "name": "softcut-demo (lua)",
     "description": "Lua softcut demo — load sample, loop, modulate rate",
     "file": "softcut-demo.lua"
+  },
+  {
+    "name": "api-test (lua)",
+    "description": "Tests screen, softcut, clock, and midi APIs together",
+    "file": "api-test.lua"
   }
 ]
