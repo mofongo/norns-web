@@ -1,49 +1,49 @@
--- hello.lua — minimal norns-web Lua script example
--- Demonstrates the screen API and redraw lifecycle.
+-- hello.lua — minimal norns-web Lua script
+-- Demonstrates idiomatic clock.run / clock.sync coroutine pattern.
 
-local x = 64
-local y = 32
-local t = 0
+local beat = 0
+local x = 8
 
 function init()
   clock.internal.set_tempo(120)
   clock.internal.start()
 
-  -- pulse x position every beat using clock.metro
-  clock.metro(1, function()
-    x = x + 2
-    if x > 120 then x = 8 end
+  -- Idiomatic norns pattern: coroutine with while/sync loop
+  clock.run(function()
+    while true do
+      clock.sync(1)          -- suspend here until the next beat
+      beat = beat + 1
+      x = 8 + (beat % 10) * 12
+    end
   end)
 end
 
 function redraw()
-  t = t + 0.02
-
   screen.clear()
   screen.level(15)
 
-  -- bouncing circle
-  local cx = x
-  local cy = 32 + math.floor(math.sin(t) * 12)
-  screen.circle_fill(cx, cy, 4)
+  -- moving circle tracks the beat
+  screen.circle_fill(x, 32, 5)
 
-  -- label
+  -- beat counter
   screen.level(10)
   screen.move(2, 2)
   screen.font_size(8)
-  screen.text("hello.lua")
+  screen.text("beat: " .. beat)
 
   screen.update()
 end
 
 function key(n, z)
   if n == 3 and z == 1 then
-    x = 64
+    beat = 0
+    x = 8
   end
 end
 
 function enc(n, d)
   if n == 1 then
-    t = t + d * 0.1
+    local bpm = math.max(20, math.min(300, clock.get_tempo() + d))
+    clock.internal.set_tempo(bpm)
   end
 end

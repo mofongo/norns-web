@@ -23,6 +23,6 @@
   },
   "homepage": "https://github.com/mofongo/norns-web#readme",
   "dependencies": {
-    "lua-in-js": "^2.2.5"
+    "fengari-web": "^0.1.4"
   }
 }

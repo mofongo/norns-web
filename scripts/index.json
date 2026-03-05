@@ -28,5 +28,10 @@
     "name": "amen",
     "description": "Sampler & mangler — load, loop, and mangle breakbeats",
     "file": "amen.js"
+  },
+  {
+    "name": "hello (lua)",
+    "description": "Minimal Lua script — clock.run / clock.sync coroutine demo",
+    "file": "hello.lua"
   }
 ]
