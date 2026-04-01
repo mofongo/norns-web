@@ -125,6 +125,116 @@
       font-size: 0.8rem;
       line-height: 1.4;
     }
+
+    /* ── norns controls ─────────────────────────────────── */
+    #norns-controls { margin-bottom: 1rem; }
+
+    .nc-hw {
+      display: flex;
+      align-items: flex-end;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Encoders */
+    .nc-enc {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .nc-knob {
+      cursor: ns-resize;
+      touch-action: none;
+      user-select: none;
+      display: block;
+    }
+    .nc-knob:hover { filter: brightness(1.15); }
+
+    /* Keys */
+    .nc-key-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .nc-key-btn {
+      font-family: monospace;
+      font-size: 0.9rem;
+      width: 4.5rem;
+      height: 2.25rem;
+      background: #252525;
+      color: #ccc;
+      border: 1px solid #555;
+      cursor: pointer;
+      user-select: none;
+      touch-action: none;
+      letter-spacing: 0.06em;
+      border-radius: 2px;
+    }
+    .nc-key-btn:hover { background: #2e2e2e; border-color: #777; }
+    .nc-key-btn.pressed {
+      background: #1a1a2e;
+      border-color: #8cf;
+      color: #8cf;
+      box-shadow: 0 0 6px rgba(136,204,255,0.2);
+    }
+
+    /* Shared label + MIDI row */
+    .nc-label {
+      font-size: 0.72rem;
+      color: #777;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .nc-midi-row {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .nc-midi-row input[type="number"] {
+      width: 3.2rem;
+      font-size: 0.78rem;
+      padding: 0.2rem 0.3rem;
+      background: #1a1a1a;
+      color: #aaa;
+      border: 1px solid #444;
+      text-align: center;
+    }
+    .nc-learn-btn {
+      font-family: monospace;
+      font-size: 0.7rem;
+      padding: 0.15rem 0.45rem;
+      background: #1a1a1a;
+      color: #555;
+      border: 1px solid #3a3a3a;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .nc-learn-btn:hover { color: #aaa; border-color: #666; }
+    .nc-learn-btn.listening { color: #da7; border-color: #b85; background: #1a1500; }
+
+    /* MIDI status bar */
+    .nc-status-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      color: #555;
+      flex-wrap: wrap;
+      padding-top: 0.4rem;
+      border-top: 1px solid #2a2a2a;
+    }
+    .nc-status-bar label { color: #666; white-space: nowrap; }
+    .nc-status-bar select {
+      min-width: 0;
+      font-size: 0.78rem;
+      padding: 0.2rem 0.3rem;
+      background: #1a1a1a;
+      border-color: #3a3a3a;
+    }
+    #nc-midi-status { color: #444; font-size: 0.78rem; margin-left: auto; }
   </style>
 </head>
 <body>
@@ -132,6 +242,24 @@
   <p class="sub">MIDI, Softcut & Screen APIs in the browser — <a href="docs.html">API docs</a> · <a href="catalog.html">catalog</a></p>
 
   <canvas id="norns-screen"></canvas>
+
+  <fieldset id="norns-controls">
+    <legend>controls</legend>
+    <!-- encoders (E1–E3) and keys (K1–K3) built by norns-controls.js -->
+    <div class="nc-hw">
+      <div id="nc-encoders" style="display:flex;gap:2rem;flex-wrap:wrap;align-items:flex-end;"></div>
+      <div id="nc-keys"     style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;"></div>
+    </div>
+    <div class="nc-status-bar">
+      <label for="nc-cc-mode">CC mode:</label>
+      <select id="nc-cc-mode" style="min-width:0;width:auto;">
+        <option value="relative-signed">relative (signed-bit)</option>
+        <option value="relative-twos">relative (2's comp)</option>
+        <option value="absolute">absolute</option>
+      </select>
+      <span id="nc-midi-status">MIDI: not started</span>
+    </div>
+  </fieldset>
 
   <div class="controls">
     <button id="btn-start">start audio</button>
@@ -226,6 +354,7 @@
     import midi from "./lib/midi.js";
     import mods from "./lib/mods.js";
     import loader from "./lib/script-loader.js";
+    import { buildNornsControls } from "./lib/norns-controls.js";
 
     const $ = (id) => document.getElementById(id);
     const log = (msg) => {
@@ -233,6 +362,9 @@
       el.textContent += msg + "\n";
       el.scrollTop = el.scrollHeight;
     };
+
+    // Build encoder knobs + key buttons (no audio needed)
+    const controls = buildNornsControls({ loader, onLog: log });
 
     let audioCtx = null;
     let inputSource = null; // MediaStreamAudioSourceNode
@@ -309,6 +441,7 @@
           await loader.runSource(entry.source, entry.name + ".lua", canvasEl, audioCtx);
           $("script-name").textContent = entry.name;
           $("btn-script-stop").disabled = false;
+          controls.resetKnobs();
           log(`Script "${entry.name}" running`);
         } else {
           const url = `./scripts/${file}`;
@@ -316,6 +449,7 @@
           await loader.run(url, canvasEl, audioCtx);
           $("script-name").textContent = file;
           $("btn-script-stop").disabled = false;
+          controls.resetKnobs();
           log(`Script "${file}" running`);
         }
       } catch (err) {
@@ -370,6 +504,7 @@
         $("script-select").value = "";
         $("script-desc").textContent = "";
         $("btn-script-stop").disabled = false;
+        controls.resetKnobs();
         log(`Script "${file.name}" running`);
       } catch (err) {
         log(`Script error: ${err.message}`);
@@ -408,6 +543,12 @@
       try {
         const ok = await midi.init();
         if (ok) {
+          // Hook encoder/key MIDI mapping to raw MIDI input
+          try {
+            const midiAccess = await navigator.requestMIDIAccess();
+            controls.setupMidi(midiAccess);
+          } catch { /* MIDI access unavailable */ }
+
           const devices = midi.devices;
           if (devices.length > 0) {
             $("midi-enc-status").textContent =
