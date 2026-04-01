@@ -172,6 +172,7 @@
       touch-action: none;
       letter-spacing: 0.06em;
       border-radius: 2px;
+      position: relative;
     }
     .nc-key-btn:hover { background: #2e2e2e; border-color: #777; }
     .nc-key-btn.pressed {
@@ -179,6 +180,15 @@
       border-color: #8cf;
       color: #8cf;
       box-shadow: 0 0 6px rgba(136,204,255,0.2);
+    }
+    .nc-key-shortcut {
+      position: absolute;
+      bottom: 2px;
+      right: 4px;
+      font-size: 0.58rem;
+      color: #555;
+      line-height: 1;
+      letter-spacing: 0;
     }
 
     /* Shared label + MIDI row */
