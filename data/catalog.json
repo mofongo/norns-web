@@ -1,0 +1,184 @@
+[
+  {
+    "id": "cranes",
+    "name": "cranes",
+    "author": "tehn",
+    "description": "Two-voice varispeed softcut looper. Mirrored and independent playheads with reversing, rate control, and crossfade.",
+    "tags": ["looper", "softcut", "ambient"],
+    "github": "https://github.com/monome/cranes",
+    "raw_url": "https://raw.githubusercontent.com/monome/cranes/main/cranes.lua",
+    "compat": {
+      "status": "compatible",
+      "notes": "Fully compatible — uses only softcut, screen, clock, and params.",
+      "missing": []
+    }
+  },
+  {
+    "id": "reels",
+    "name": "reels",
+    "author": "tehn",
+    "description": "Four-track tape-style softcut looper. Record, overdub, and play back loops with independent rate and position control.",
+    "tags": ["looper", "softcut", "multitrack"],
+    "github": "https://github.com/monome/reels",
+    "raw_url": "https://raw.githubusercontent.com/monome/reels/main/reels.lua",
+    "compat": {
+      "status": "compatible",
+      "notes": "Fully compatible — softcut-based with no engine dependency.",
+      "missing": []
+    }
+  },
+  {
+    "id": "awake",
+    "name": "awake",
+    "author": "tehn",
+    "description": "Generative polyphonic step sequencer. Four euclidean rhythm lanes that mutate and interact. Classic norns script.",
+    "tags": ["sequencer", "generative", "euclidean", "midi"],
+    "github": "https://github.com/monome/awake",
+    "raw_url": "https://raw.githubusercontent.com/monome/awake/main/awake.lua",
+    "compat": {
+      "status": "compatible",
+      "notes": "Fully compatible. PolyPerc engine is approximated by sonic-pi-beep (scsynth WebAssembly). Place a compiled PolyPerc.scsyndef in engines/ for full fidelity.",
+      "missing": []
+    }
+  },
+  {
+    "id": "orca",
+    "name": "orca",
+    "author": "hundredrabbits",
+    "description": "Esoteric programming language for live MIDI sequencing. Each letter is an operator that generates, transforms, and routes MIDI data on a 2D grid.",
+    "tags": ["sequencer", "midi", "esoteric", "live-coding"],
+    "github": "https://github.com/hundredrabbits/orca-norns",
+    "raw_url": "https://raw.githubusercontent.com/hundredrabbits/orca-norns/main/orca.lua",
+    "compat": {
+      "status": "compatible",
+      "notes": "Fully compatible — pure MIDI sequencer with screen display, no engine dependency.",
+      "missing": []
+    }
+  },
+  {
+    "id": "arcologies",
+    "name": "arcologies",
+    "author": "tyleretters",
+    "description": "Cellular automata sequencer for MIDI and modular. Draw structures on a grid to generate evolving sequences.",
+    "tags": ["sequencer", "generative", "midi", "cellular-automata"],
+    "github": "https://github.com/tyleretters/arcologies",
+    "raw_url": "https://raw.githubusercontent.com/tyleretters/arcologies/main/arcologies.lua",
+    "compat": {
+      "status": "compatible",
+      "notes": "Fully compatible — MIDI sequencer with screen, no engine dependency.",
+      "missing": []
+    }
+  },
+  {
+    "id": "cheat-codes-2",
+    "name": "cheat codes 2",
+    "author": "dndrks",
+    "description": "Live softcut sampler and looper with a grid-focused interface. Record, slice, and remix audio in real time.",
+    "tags": ["sampler", "looper", "softcut", "performance"],
+    "github": "https://github.com/dndrks/cheat_codes_2",
+    "raw_url": null,
+    "compat": {
+      "status": "partial",
+      "notes": "Core softcut recording and playback work. Grid hardware integration and some advanced features are unavailable in norns-web.",
+      "missing": ["grid hardware", "arc hardware"]
+    }
+  },
+  {
+    "id": "compass",
+    "name": "compass",
+    "author": "21echoes",
+    "description": "Generative sequencer built around a set of user-defined rules. Evolving patterns with probabilistic step behavior.",
+    "tags": ["sequencer", "generative", "probabilistic"],
+    "github": "https://github.com/21echoes/compass",
+    "raw_url": "https://raw.githubusercontent.com/21echoes/compass/main/compass.lua",
+    "compat": {
+      "status": "partial",
+      "notes": "Sequencer and MIDI output work. Audio engine voices are unavailable — use with an external MIDI synth.",
+      "missing": ["Timber engine", "PolyPerc engine"]
+    }
+  },
+  {
+    "id": "flora",
+    "name": "flora",
+    "author": "scanner-darkly",
+    "description": "Cellular automata sequencer using Conway's Game of Life rules to generate MIDI patterns. Patterns evolve, loop, and die.",
+    "tags": ["sequencer", "generative", "cellular-automata", "midi"],
+    "github": "https://github.com/scanner-darkly/flora",
+    "raw_url": "https://raw.githubusercontent.com/scanner-darkly/flora/main/flora.lua",
+    "compat": {
+      "status": "compatible",
+      "notes": "Fully compatible — MIDI sequencer with screen display.",
+      "missing": []
+    }
+  },
+  {
+    "id": "molly-the-poly",
+    "name": "molly the poly",
+    "author": "tehn / sixolet",
+    "description": "Paraphonic synthesizer voice with classic analog parameters. LFO, filter, envelope, and arpeggiator.",
+    "tags": ["synth", "paraphonic", "midi"],
+    "github": "https://github.com/monome/molly_the_poly",
+    "raw_url": "https://raw.githubusercontent.com/monome/molly_the_poly/main/molly_the_poly.lua",
+    "compat": {
+      "status": "partial",
+      "notes": "MollyThePoly engine is approximated by sonic-pi-prophet (subtractive poly, scsynth WebAssembly). LFO and arpeggiator work. Place a compiled MollyThePoly.scsyndef in engines/ for full fidelity.",
+      "missing": []
+    }
+  },
+  {
+    "id": "timber",
+    "name": "timber player",
+    "author": "markwheeler",
+    "description": "Sample player with per-sample pitch, filter, envelope, and LFO. Load audio files and play them chromatically via MIDI.",
+    "tags": ["sampler", "midi", "performance"],
+    "github": "https://github.com/markwheeler/timber",
+    "raw_url": null,
+    "compat": {
+      "status": "partial",
+      "notes": "Script loads and params initialize. Audio playback requires Timber SuperCollider engine — use softcut-based playback or external samplers as a workaround.",
+      "missing": ["Timber engine"]
+    }
+  },
+  {
+    "id": "stjonn",
+    "name": "stjonn",
+    "author": "tehn",
+    "description": "Six-voice polyphonic string synthesizer. Physically modeled string tones with delay and reverb.",
+    "tags": ["synth", "strings", "polyphonic"],
+    "github": "https://github.com/monome/stjonn",
+    "raw_url": "https://raw.githubusercontent.com/monome/stjonn/main/stjonn.lua",
+    "compat": {
+      "status": "partial",
+      "notes": "No built-in approximation for StJonn engine. Compile Engine_StJonn.sc → StJonn.scsyndef and place it in engines/ to enable audio. Script logic and UI work regardless.",
+      "missing": ["StJonn.scsyndef (compile from .sc source)"]
+    }
+  },
+  {
+    "id": "boing",
+    "name": "boing",
+    "author": "tehn",
+    "description": "Physics-based synthesis. Bouncing ball model driving a resonant synthesis engine.",
+    "tags": ["synth", "physics", "experimental"],
+    "github": "https://github.com/monome/boing",
+    "raw_url": "https://raw.githubusercontent.com/monome/boing/main/boing.lua",
+    "compat": {
+      "status": "partial",
+      "notes": "No built-in approximation for Boing engine. Compile Engine_Boing.sc → Boing.scsyndef and place it in engines/ to enable audio. Script logic and UI work regardless.",
+      "missing": ["Boing.scsyndef (compile from .sc source)"]
+    }
+  },
+  {
+    "id": "mx-synths",
+    "name": "mx.synths",
+    "author": "bobbykitten",
+    "description": "A collection of 14 polysynth engines with a unified interface. Heavy SuperCollider synthesis.",
+    "tags": ["synth", "polyphonic", "collection"],
+    "github": "https://github.com/bobbykitten/mx.synths",
+    "raw_url": null,
+    "compat": {
+      "status": "incompatible",
+      "notes": "All synthesis requires mx.synths SuperCollider engines. No audio output in norns-web.",
+      "missing": ["mx.synths engines (14 SuperCollider SynthDefs)"]
+    }
+  }
+]

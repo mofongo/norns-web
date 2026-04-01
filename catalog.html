@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>norns-web — catalog</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: monospace;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      padding: 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    a { color: #8cf; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Header */
+    .page-header {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 0.4rem;
+      flex-wrap: wrap;
+    }
+    h1 { color: #fff; }
+    h1 span { color: #888; font-weight: normal; }
+    .nav-links { color: #666; font-size: 0.85rem; }
+    .nav-links a { color: #8cf; }
+    p.sub { color: #888; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .toolbar input[type="search"] {
+      font-family: monospace;
+      font-size: 0.9rem;
+      background: #222;
+      color: #e0e0e0;
+      border: 1px solid #555;
+      padding: 0.4rem 0.6rem;
+      flex: 1;
+      min-width: 160px;
+      max-width: 300px;
+    }
+    .toolbar input[type="search"]::placeholder { color: #555; }
+    .filters { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+    .filter-btn {
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.7rem;
+      background: #222;
+      color: #888;
+      border: 1px solid #444;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filter-btn:hover { background: #2a2a2a; color: #ccc; }
+    .filter-btn.active {
+      background: #333;
+      color: #e0e0e0;
+      border-color: #666;
+    }
+    .filter-btn.f-compatible.active { border-color: #5a5; color: #7c7; }
+    .filter-btn.f-partial.active    { border-color: #b85; color: #da7; }
+    .filter-btn.f-incompatible.active { border-color: #944; color: #c66; }
+    .filter-btn.f-installed.active  { border-color: #58b; color: #7af; }
+
+    /* Notice banner */
+    .notice {
+      font-size: 0.8rem;
+      color: #666;
+      border: 1px solid #333;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .notice strong { color: #888; }
+
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+
+    /* Card */
+    .card {
+      border: 1px solid #333;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      background: #1e1e1e;
+    }
+    .card.hidden { display: none; }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .card-title {
+      font-size: 1rem;
+      color: #fff;
+      font-weight: bold;
+    }
+    .card-author { color: #666; font-size: 0.8rem; }
+
+    /* Compat badge */
+    .badge {
+      font-size: 0.72rem;
+      padding: 0.2rem 0.5rem;
+      border: 1px solid;
+      white-space: nowrap;
+      cursor: default;
+      flex-shrink: 0;
+    }
+    .badge-compatible   { color: #7c7; border-color: #5a5; }
+    .badge-partial      { color: #da7; border-color: #b85; }
+    .badge-incompatible { color: #c66; border-color: #944; }
+    .badge-installed    { color: #7af; border-color: #58b; }
+
+    .card-desc {
+      font-size: 0.82rem;
+      color: #aaa;
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    /* Tags */
+    .tags {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .tag {
+      font-size: 0.72rem;
+      color: #666;
+      border: 1px solid #333;
+      padding: 0.1rem 0.4rem;
+    }
+
+    /* Compat notes */
+    .compat-notes {
+      font-size: 0.78rem;
+      color: #666;
+      border-left: 2px solid #333;
+      padding-left: 0.5rem;
+      line-height: 1.4;
+    }
+    .compat-notes.partial     { border-color: #b85; color: #a87; }
+    .compat-notes.incompatible { border-color: #944; color: #966; }
+
+    /* Card actions */
+    .card-actions {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      margin-top: 0.25rem;
+    }
+    .btn {
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 0.35rem 0.7rem;
+      background: #2a2a2a;
+      color: #ccc;
+      border: 1px solid #555;
+      cursor: pointer;
+    }
+    .btn:hover { background: #333; }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+    .btn-install { border-color: #5a5; color: #7c7; }
+    .btn-install:hover { background: #1a2e1a; }
+    .btn-install.loading { opacity: 0.6; cursor: wait; }
+    .btn-installed { border-color: #58b; color: #7af; cursor: default; }
+    .btn-installed:hover { background: #2a2a2a; }
+    .btn-uninstall { font-size: 0.75rem; border-color: #555; color: #666; }
+    .btn-uninstall:hover { background: #2a1a1a; color: #c66; border-color: #944; }
+    .btn-github { border-color: #444; color: #888; }
+    .btn-github:hover { color: #8cf; border-color: #8cf; }
+    .btn-run { border-color: #58b; color: #7af; }
+    .btn-run:hover { background: #1a1e2e; }
+
+    .install-error {
+      font-size: 0.75rem;
+      color: #c66;
+      margin-top: 0.25rem;
+    }
+
+    /* Empty state */
+    #empty-state {
+      color: #555;
+      padding: 2rem 0;
+      text-align: center;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    /* Count */
+    .count {
+      font-size: 0.8rem;
+      color: #555;
+      margin-bottom: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <h1>norns<span>-web</span> / catalog</h1>
+    <span class="nav-links">← <a href="index.html">back to player</a></span>
+  </div>
+  <p class="sub">Browse and install community scripts. Compatibility data is community-curated — your mileage may vary.</p>
+
+  <div class="notice">
+    <strong>about compatibility:</strong> norns-web runs Lua scripts in the browser using the Web Audio, Web MIDI, and softcut APIs.
+    Scripts that require SuperCollider engines cannot produce audio in norns-web.
+    <strong>partial</strong> = core functionality works; <strong>incompatible</strong> = no audio output without engine.
+    Install requires running norns-web via a local HTTP server (e.g. <code>npx serve</code>).
+  </div>
+
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="search scripts…" autocomplete="off">
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">all</button>
+      <button class="filter-btn f-compatible" data-filter="compatible">● compatible</button>
+      <button class="filter-btn f-partial" data-filter="partial">◐ partial</button>
+      <button class="filter-btn f-incompatible" data-filter="incompatible">✗ incompatible</button>
+      <button class="filter-btn f-installed" data-filter="installed">↓ installed</button>
+    </div>
+  </div>
+
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"></div>
+  <div id="empty-state">no scripts match this filter</div>
+
+  <script type="module">
+    // ---- storage helpers ----
+    const STORAGE_KEY = "norns-web:installed";
+
+    function loadInstalled() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+      catch { return {}; }
+    }
+
+    function saveInstalled(obj) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+    }
+
+    function isInstalled(id) {
+      return id in loadInstalled();
+    }
+
+    // ---- fetch catalog ----
+    let catalog = [];
+    try {
+      const resp = await fetch("./data/catalog.json");
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      catalog = await resp.json();
+    } catch (err) {
+      document.getElementById("grid").textContent = "Failed to load catalog: " + err.message;
+    }
+
+    // ---- render ----
+    let activeFilter = "all";
+    let searchQuery = "";
+
+    function compatLabel(status) {
+      if (status === "compatible")   return "● compatible";
+      if (status === "partial")      return "◐ partial";
+      if (status === "incompatible") return "✗ incompatible";
+      return status;
+    }
+
+    function renderCard(entry) {
+      const installed = isInstalled(entry.id);
+      const status = entry.compat.status;
+
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.id = entry.id;
+      card.dataset.status = status;
+      card.dataset.installed = installed ? "1" : "0";
+
+      // header row
+      const header = document.createElement("div");
+      header.className = "card-header";
+
+      const titleBlock = document.createElement("div");
+      const title = document.createElement("div");
+      title.className = "card-title";
+      title.textContent = entry.name;
+      const author = document.createElement("div");
+      author.className = "card-author";
+      author.textContent = "by " + entry.author;
+      titleBlock.appendChild(title);
+      titleBlock.appendChild(author);
+
+      const badge = document.createElement("span");
+      if (installed) {
+        badge.className = "badge badge-installed";
+        badge.textContent = "↓ installed";
+        badge.title = "Script is installed locally";
+      } else {
+        badge.className = `badge badge-${status}`;
+        badge.textContent = compatLabel(status);
+        badge.title = entry.compat.notes;
+      }
+
+      header.appendChild(titleBlock);
+      header.appendChild(badge);
+      card.appendChild(header);
+
+      // description
+      const desc = document.createElement("div");
+      desc.className = "card-desc";
+      desc.textContent = entry.description;
+      card.appendChild(desc);
+
+      // tags
+      if (entry.tags && entry.tags.length) {
+        const tags = document.createElement("div");
+        tags.className = "tags";
+        for (const t of entry.tags) {
+          const chip = document.createElement("span");
+          chip.className = "tag";
+          chip.textContent = t;
+          tags.appendChild(chip);
+        }
+        card.appendChild(tags);
+      }
+
+      // compat notes (only for partial / incompatible)
+      if (status !== "compatible") {
+        const notes = document.createElement("div");
+        notes.className = `compat-notes ${status}`;
+        notes.textContent = entry.compat.notes;
+        card.appendChild(notes);
+      }
+
+      // actions
+      const actions = document.createElement("div");
+      actions.className = "card-actions";
+
+      const errorEl = document.createElement("div");
+      errorEl.className = "install-error";
+      errorEl.style.display = "none";
+
+      if (installed) {
+        const runBtn = document.createElement("button");
+        runBtn.className = "btn btn-run";
+        runBtn.textContent = "open in player →";
+        runBtn.addEventListener("click", () => {
+          window.location.href = "index.html";
+        });
+        actions.appendChild(runBtn);
+
+        const uninstallBtn = document.createElement("button");
+        uninstallBtn.className = "btn btn-uninstall";
+        uninstallBtn.textContent = "uninstall";
+        uninstallBtn.addEventListener("click", () => {
+          const db = loadInstalled();
+          delete db[entry.id];
+          saveInstalled(db);
+          // re-render card
+          card.replaceWith(buildCard(entry));
+          updateCount();
+        });
+        actions.appendChild(uninstallBtn);
+      } else if (status === "incompatible") {
+        const disabledBtn = document.createElement("button");
+        disabledBtn.className = "btn";
+        disabledBtn.textContent = "cannot install";
+        disabledBtn.disabled = true;
+        disabledBtn.title = entry.compat.notes;
+        actions.appendChild(disabledBtn);
+      } else {
+        // compatible or partial — show install button
+        const installBtn = document.createElement("button");
+        installBtn.className = "btn btn-install";
+
+        if (!entry.raw_url) {
+          installBtn.textContent = "install manually";
+          installBtn.title = "No direct download URL — clone the GitHub repo into scripts/";
+          installBtn.addEventListener("click", () => {
+            window.open(entry.github, "_blank");
+          });
+        } else {
+          installBtn.textContent = "install";
+          installBtn.addEventListener("click", async () => {
+            installBtn.textContent = "fetching…";
+            installBtn.classList.add("loading");
+            installBtn.disabled = true;
+            errorEl.style.display = "none";
+
+            try {
+              const resp = await fetch(entry.raw_url);
+              if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+              const source = await resp.text();
+
+              const db = loadInstalled();
+              db[entry.id] = {
+                id: entry.id,
+                name: entry.name,
+                description: entry.description,
+                status: entry.compat.status,
+                source,
+                installed_at: Date.now(),
+              };
+              saveInstalled(db);
+
+              // re-render card as installed
+              card.replaceWith(buildCard(entry));
+              updateCount();
+            } catch (err) {
+              let msg = err.message;
+              if (err instanceof TypeError || msg.includes("Failed to fetch")) {
+                msg = "Fetch failed — run norns-web via a local HTTP server (npx serve)";
+              }
+              errorEl.textContent = msg;
+              errorEl.style.display = "block";
+              installBtn.textContent = "install";
+              installBtn.classList.remove("loading");
+              installBtn.disabled = false;
+            }
+          });
+        }
+        actions.appendChild(installBtn);
+      }
+
+      // GitHub link (always shown)
+      if (entry.github) {
+        const ghBtn = document.createElement("button");
+        ghBtn.className = "btn btn-github";
+        ghBtn.textContent = "github ↗";
+        ghBtn.addEventListener("click", () => window.open(entry.github, "_blank"));
+        actions.appendChild(ghBtn);
+      }
+
+      card.appendChild(actions);
+      if (status !== "compatible" && !installed) {
+        card.appendChild(errorEl);
+      }
+
+      return card;
+    }
+
+    // wrap so we can re-render individual cards by calling buildCard
+    function buildCard(entry) {
+      return renderCard(entry);
+    }
+
+    function applyFilter() {
+      const cards = document.querySelectorAll(".card");
+      let visible = 0;
+      const q = searchQuery.toLowerCase();
+
+      cards.forEach((card) => {
+        const entry = catalog.find((e) => e.id === card.dataset.id);
+        if (!entry) return;
+
+        const matchFilter =
+          activeFilter === "all" ||
+          (activeFilter === "installed" && card.dataset.installed === "1") ||
+          card.dataset.status === activeFilter;
+
+        const matchSearch =
+          !q ||
+          entry.name.toLowerCase().includes(q) ||
+          entry.author.toLowerCase().includes(q) ||
+          entry.description.toLowerCase().includes(q) ||
+          (entry.tags || []).some((t) => t.includes(q));
+
+        const show = matchFilter && matchSearch;
+        card.classList.toggle("hidden", !show);
+        if (show) visible++;
+      });
+
+      document.getElementById("empty-state").style.display =
+        visible === 0 ? "block" : "none";
+
+      updateCount();
+    }
+
+    function updateCount() {
+      const total = document.querySelectorAll(".card:not(.hidden)").length;
+      const installedCount = Object.keys(loadInstalled()).length;
+      let text = `${total} script${total !== 1 ? "s" : ""}`;
+      if (installedCount > 0) text += ` · ${installedCount} installed`;
+      document.getElementById("count").textContent = text;
+    }
+
+    // ---- initial render ----
+    const grid = document.getElementById("grid");
+    for (const entry of catalog) {
+      grid.appendChild(buildCard(entry));
+    }
+    updateCount();
+
+    // ---- filter buttons ----
+    document.querySelectorAll(".filter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".filter-btn").forEach((b) =>
+          b.classList.remove("active")
+        );
+        btn.classList.add("active");
+        activeFilter = btn.dataset.filter;
+        applyFilter();
+      });
+    });
+
+    // ---- search ----
+    document.getElementById("search").addEventListener("input", (e) => {
+      searchQuery = e.target.value;
+      applyFilter();
+    });
+  </script>
+</body>
+</html>

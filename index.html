@@ -129,7 +129,7 @@
 </head>
 <body>
   <h1>norns<span>-web</span></h1>
-  <p class="sub">MIDI, Softcut & Screen APIs in the browser — <a href="docs.html">API docs</a></p>
+  <p class="sub">MIDI, Softcut & Screen APIs in the browser — <a href="docs.html">API docs</a> · <a href="catalog.html">catalog</a></p>
 
   <canvas id="norns-screen"></canvas>
 
@@ -156,6 +156,23 @@
     <div id="drop-zone">
       drop a .js or .lua script here or click to browse
       <input type="file" id="script-file" accept=".js,.lua">
+    </div>
+  </fieldset>
+
+  <fieldset id="mods-panel">
+    <legend>mods</legend>
+    <div class="rec-row">
+      <label style="display:flex;align-items:center;gap:0.4rem;">
+        <input type="checkbox" id="mod-midi-enc">
+        midi-enc
+      </label>
+      <span id="midi-enc-status" style="color:#666;font-size:0.8rem;margin-left:0.75rem;">
+        MIDI: not initialized
+      </span>
+    </div>
+    <div class="rec-row" style="font-size:0.8rem;color:#555;">
+      Maps MIDI CC → enc(n,&delta;) and notes → key(n,z) using relative signed-bit CC mode.
+      Port&nbsp;1&nbsp;= first connected device. Reload script after toggling.
     </div>
   </fieldset>
 
@@ -206,6 +223,8 @@
     import softcut from "./lib/softcut.js";
     import screen from "./lib/screen.js";
     import clock from "./lib/clock.js";
+    import midi from "./lib/midi.js";
+    import mods from "./lib/mods.js";
     import loader from "./lib/script-loader.js";
 
     const $ = (id) => document.getElementById(id);
@@ -240,6 +259,33 @@
       log("Could not load script manifest: " + err.message);
     }
 
+    // --- Load installed scripts from catalog ---
+    const INSTALLED_KEY = "norns-web:installed";
+    function getInstalledScripts() {
+      try { return JSON.parse(localStorage.getItem(INSTALLED_KEY) || "{}"); }
+      catch { return {}; }
+    }
+
+    const installed = getInstalledScripts();
+    const installedIds = Object.keys(installed);
+    if (installedIds.length > 0) {
+      const sel = $("script-select");
+      const sep = document.createElement("option");
+      sep.disabled = true;
+      sep.textContent = "── installed ──";
+      sel.appendChild(sep);
+      for (const id of installedIds) {
+        const entry = installed[id];
+        const opt = document.createElement("option");
+        opt.value = `installed:${id}`;
+        opt.textContent = entry.name;
+        opt.dataset.desc = entry.description || "";
+        opt.dataset.installed = "true";
+        sel.appendChild(opt);
+      }
+      log(`Loaded ${installedIds.length} installed script(s) from catalog`);
+    }
+
     // --- Script select change ---
     $("script-select").addEventListener("change", () => {
       const sel = $("script-select");
@@ -248,18 +294,30 @@
       $("btn-script-run").disabled = !sel.value;
     });
 
-    // --- Run script from manifest ---
+    // --- Run script from manifest or installed catalog ---
     $("btn-script-run").addEventListener("click", async () => {
       const file = $("script-select").value;
       if (!file) return;
+      stopScreenDemo();
+
       try {
-        stopScreenDemo();
-        const url = `./scripts/${file}`;
-        log(`Loading script: ${file}`);
-        await loader.run(url, canvasEl, audioCtx);
-        $("script-name").textContent = file;
-        $("btn-script-stop").disabled = false;
-        log(`Script "${file}" running`);
+        if (file.startsWith("installed:")) {
+          const id = file.slice("installed:".length);
+          const entry = getInstalledScripts()[id];
+          if (!entry) { log(`Installed script "${id}" not found`); return; }
+          log(`Loading installed script: ${entry.name}`);
+          await loader.runSource(entry.source, entry.name + ".lua", canvasEl, audioCtx);
+          $("script-name").textContent = entry.name;
+          $("btn-script-stop").disabled = false;
+          log(`Script "${entry.name}" running`);
+        } else {
+          const url = `./scripts/${file}`;
+          log(`Loading script: ${file}`);
+          await loader.run(url, canvasEl, audioCtx);
+          $("script-name").textContent = file;
+          $("btn-script-stop").disabled = false;
+          log(`Script "${file}" running`);
+        }
       } catch (err) {
         log(`Script error: ${err.message}`);
         console.error(err);
@@ -320,6 +378,23 @@
     }
 
     // --- Start audio ---
+    // --- midi-enc mod toggle ---
+    $("mod-midi-enc").addEventListener("change", async (e) => {
+      if (e.target.checked) {
+        try {
+          await mods.enable("midi-enc");
+          log("mod midi-enc enabled — reload script to apply");
+        } catch (err) {
+          log("mod midi-enc failed: " + err.message);
+          e.target.checked = false;
+        }
+      } else {
+        mods.disable("midi-enc");
+        log("mod midi-enc disabled — reload script to apply");
+      }
+    });
+
+    // --- Start audio ---
     $("btn-start").addEventListener("click", async () => {
       audioCtx = new AudioContext({ sampleRate: 48000 });
       await audioCtx.resume();
@@ -328,6 +403,26 @@
       $("btn-stop").disabled = false;
       $("input-rec").disabled = false;
       log("AudioContext started");
+
+      // Initialize Web MIDI
+      try {
+        const ok = await midi.init();
+        if (ok) {
+          const devices = midi.devices;
+          if (devices.length > 0) {
+            $("midi-enc-status").textContent =
+              "MIDI: " + devices.map((d) => `port ${d.n} → ${d.name}`).join(", ");
+            log(`MIDI devices: ${devices.map((d) => d.name).join(", ")}`);
+          } else {
+            $("midi-enc-status").textContent = "MIDI: no devices connected";
+            log("Web MIDI initialized — no devices connected");
+          }
+        } else {
+          $("midi-enc-status").textContent = "MIDI: not supported";
+        }
+      } catch (err) {
+        log("Web MIDI error: " + err.message);
+      }
 
       // Enumerate audio input devices
       try {
