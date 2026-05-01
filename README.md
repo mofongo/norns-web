@@ -1,1 +1,1 @@
-Experimental port of Norns to use web apis.
+Experimental and ridiculous browser port of monome norns — softcut, screen, clock, MIDI, and Lua scripts running on Web Audio. No SuperCollider engines. This is very much a work in progress. 
