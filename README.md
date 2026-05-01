@@ -1,1 +1,1 @@
-Experimental and ridiculous browser port of monome norns — softcut, screen, clock, MIDI, and Lua scripts running on Web Audio. No SuperCollider engines. This is very much a work in progress. 
+Experimental and ridiculous browser port of monome norns — softcut, screen, clock, MIDI, and Lua scripts running on Web Audio. No SuperCollider engines. This is very much a work in progress: https://norns-web.mofongo.io/
